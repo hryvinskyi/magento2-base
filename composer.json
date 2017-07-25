@@ -1,5 +1,5 @@
 {
-    "name": "script/base",
+    "name": "scriptua/magento2-base",
     "description": "N/A",
     "require": {
       "php": "~5.5.0|~5.6.0|~7.0.0"
