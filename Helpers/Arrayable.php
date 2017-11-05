@@ -5,7 +5,7 @@
  * @github: <https://github.com/scriptua>
  */
 
-namespace Script\Base\Helper;
+namespace Script\Base\Helpers;
 
 interface Arrayable
 {
