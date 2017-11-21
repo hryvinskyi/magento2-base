@@ -17,7 +17,7 @@ class ArrayHelper
      *
      * ```php
      * [
-     *     'app\models\Post' => [
+     *     'post' => [
      *         'id',
      *         'title',
      *         // the key name in array result => property name
@@ -114,7 +114,7 @@ class ArrayHelper
                 } elseif ($v instanceof ReplaceArrayValue) {
                     $res[$k] = $v->value;
                 } elseif (is_int($k)) {
-                    if (isset($res[$k])) {
+                    if (array_key_exists($k, $res)) {
                         $res[] = $v;
                     } else {
                         $res[$k] = $v;
@@ -126,7 +126,6 @@ class ArrayHelper
                 }
             }
         }
-
         return $res;
     }
 
@@ -146,17 +145,17 @@ class ArrayHelper
      *
      * ```php
      * // working with array
-     * $username = \yii\helpers\ArrayHelper::getValue($_POST, 'username');
+     * $username = \Script\Base\Helpers\ArrayHelper::getValue($_POST, 'username');
      * // working with object
-     * $username = \yii\helpers\ArrayHelper::getValue($user, 'username');
+     * $username = \Script\Base\Helpers\ArrayHelper::getValue($user, 'username');
      * // working with anonymous function
-     * $fullName = \yii\helpers\ArrayHelper::getValue($user, function ($user, $defaultValue) {
+     * $fullName = \Script\Base\Helpers\ArrayHelper::getValue($user, function ($user, $defaultValue) {
      *     return $user->firstName . ' ' . $user->lastName;
      * });
      * // using dot format to retrieve the property of embedded object
-     * $street = \yii\helpers\ArrayHelper::getValue($users, 'address.street');
+     * $street = \Script\Base\Helpers\ArrayHelper::getValue($users, 'address.street');
      * // using an array of keys to retrieve the value
-     * $value = \yii\helpers\ArrayHelper::getValue($versions, ['1.0', 'date']);
+     * $value = \Script\Base\Helpers\ArrayHelper::getValue($versions, ['1.0', 'date']);
      * ```
      *
      * @param array|object $array array or object to extract value from
@@ -173,7 +172,6 @@ class ArrayHelper
         if ($key instanceof \Closure) {
             return $key($array, $default);
         }
-
         if (is_array($key)) {
             $lastKey = array_pop($key);
             foreach ($key as $keyPart) {
@@ -181,25 +179,41 @@ class ArrayHelper
             }
             $key = $lastKey;
         }
-
-        if (is_array($array) && (isset($array[$key]) || array_key_exists($key, $array)) ) {
+        if (is_array($array) && (isset($array[$key]) || array_key_exists($key, $array))) {
             return $array[$key];
         }
-
         if (($pos = strrpos($key, '.')) !== false) {
             $array = static::getValue($array, substr($key, 0, $pos), $default);
             $key = substr($key, $pos + 1);
         }
-
         if (is_object($array)) {
             // this is expected to fail if the property does not exist, or __get() is not implemented
             // it is not reliably possible to check whether a property is accessible beforehand
             return $array->$key;
         } elseif (is_array($array)) {
             return (isset($array[$key]) || array_key_exists($key, $array)) ? $array[$key] : $default;
-        } else {
-            return $default;
         }
+        return $default;
+    }
+
+    public static function setValue(&$array, $path, $value)
+    {
+        if ($path === null) {
+            $array = $value;
+            return;
+        }
+        $keys = is_array($path) ? $path : explode('.', $path);
+        while (count($keys) > 1) {
+            $key = array_shift($keys);
+            if (!isset($array[$key])) {
+                $array[$key] = [];
+            }
+            if (!is_array($array[$key])) {
+                $array[$key] = [$array[$key]];
+            }
+            $array = &$array[$key];
+        }
+        $array[array_shift($keys)] = $value;
     }
 
     /**
@@ -211,7 +225,7 @@ class ArrayHelper
      * ```php
      * // $array = ['type' => 'A', 'options' => [1, 2]];
      * // working with array
-     * $type = \yii\helpers\ArrayHelper::remove($array, 'type');
+     * $type = \Script\Base\Helpers\ArrayHelper::remove($array, 'type');
      * // $array content
      * // $array = ['options' => [1, 2]];
      * ```
@@ -240,7 +254,7 @@ class ArrayHelper
      *
      * ```php
      * $array = ['Bob' => 'Dylan', 'Michael' => 'Jackson', 'Mick' => 'Jagger', 'Janet' => 'Jackson'];
-     * $removed = \yii\helpers\ArrayHelper::removeValue($array, 'Jackson');
+     * $removed = \Script\Base\Helpers\ArrayHelper::removeValue($array, 'Jackson');
      * // result:
      * // $array = ['Bob' => 'Dylan', 'Mick' => 'Jagger'];
      * // $removed = ['Michael' => 'Jackson', 'Janet' => 'Jackson'];
@@ -775,9 +789,8 @@ class ArrayHelper
                 }
             }
             return true;
-        } else {
-            throw new InvalidParamException('Argument $needles must be an array or implement Traversable');
         }
+        throw new InvalidParamException('Argument $needles must be an array or implement Traversable');
     }
 
     /**
@@ -795,20 +808,20 @@ class ArrayHelper
      *     'E' => 1,
      * ];
      *
-     * $result = \yii\helpers\ArrayHelper::filter($array, ['A']);
+     * $result = \Script\Base\Helpers\ArrayHelper::filter($array, ['A']);
      * // $result will be:
      * // [
      * //     'A' => [1, 2],
      * // ]
      *
-     * $result = \yii\helpers\ArrayHelper::filter($array, ['A', 'B.C']);
+     * $result = \Script\Base\Helpers\ArrayHelper::filter($array, ['A', 'B.C']);
      * // $result will be:
      * // [
      * //     'A' => [1, 2],
      * //     'B' => ['C' => 1],
      * // ]
      *
-     * $result = \yii\helpers\ArrayHelper::filter($array, ['B', '!B.C']);
+     * $result = \Script\Base\Helpers\ArrayHelper::filter($array, ['B', '!B.C']);
      * // $result will be:
      * // [
      * //     'B' => ['D' => 2],
