@@ -7,14 +7,6 @@
     "type": "magento2-module",
     "version": "1.0.2",
     "license": "GNU-3.0",
-    "extra": {
-        "map": [
-            [
-                "*",
-                "Script/Base"
-            ]
-        ]
-    },
     "autoload": {
         "files": [ "registration.php" ],
         "psr-4": {
