@@ -10,5 +10,23 @@
         <tab id="script" translate="label" sortOrder="500">
             <label>Script Modules</label>
         </tab>
+        <section id="script_deploy" translate="label" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+            <class>separator-top</class>
+            <label>Deploy</label>
+            <tab>script</tab>
+
+            <resource>Script_QuickView::config_quickview</resource>
+            <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Configuration</label>
+                <field id="enable" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Enable Deploy</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="commands" translate="label" type="textarea" sortOrder="2" showInDefault="0" showInWebsite="0" showInStore="0">
+                    <label>Commands</label>
+                    <comment>Commands for deploy</comment>
+                </field>
+            </group>
+        </section>
     </system>
 </config>
