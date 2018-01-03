@@ -98,68 +98,7 @@ class Environment
         return file_exists(Environment::MAGENTO_ROOT . Environment::STATIC_CONTENT_DEPLOY_FLAG);
     }
 
-    public function removeStaticContent()
-    {
-        // atomic move within pub/static directory
-        $staticContentLocation = realpath(Environment::MAGENTO_ROOT . 'pub/static/') . '/';
-        $timestamp = time();
-        $oldStaticContentLocation = $staticContentLocation . 'old_static_content_' . $timestamp;
 
-        $this->log("Moving out old static content into $oldStaticContentLocation");
-
-        if (!file_exists($oldStaticContentLocation)) {
-            mkdir($oldStaticContentLocation);
-        }
-
-        $dir = new \DirectoryIterator($staticContentLocation);
-
-        foreach ($dir as $fileInfo) {
-            $fileName = $fileInfo->getFilename();
-            if (!$fileInfo->isDot() && strpos($fileName, 'old_static_content_') !== 0) {
-                $this->log("Rename " . $staticContentLocation . '/' . $fileName . " to " . $oldStaticContentLocation . '/' . $fileName);
-                rename($staticContentLocation . '/' . $fileName, $oldStaticContentLocation . '/' . $fileName);
-            }
-        }
-
-        $this->log("Removing $oldStaticContentLocation in the background");
-        $this->backgroundExecute("rm -rf $oldStaticContentLocation");
-
-        $preprocessedLocation = realpath(Environment::MAGENTO_ROOT . 'var') . '/view_preprocessed';
-        if (file_exists($preprocessedLocation)) {
-            $oldPreprocessedLocation = $preprocessedLocation . '_old_' . $timestamp;
-            $this->log("Rename $preprocessedLocation  to $oldPreprocessedLocation");
-            rename($preprocessedLocation, $oldPreprocessedLocation);
-            $this->log("Removing $oldPreprocessedLocation in the background");
-            $this->backgroundExecute("rm -rf $oldPreprocessedLocation");
-        }
-    }
-
-    public function removePathInBackground($relativePath)
-    {
-        $fullPath = rtrim(realpath(Environment::MAGENTO_ROOT) . '/' . $relativePath, '/');
-        $timestamp = time();
-        if (file_exists($fullPath)) {
-            $backgroundLocation = $fullPath . '_old_' . $timestamp;
-            $this->log("Rename $fullPath  to $backgroundLocation");
-            rename($fullPath, $backgroundLocation);
-            $this->log("Removing $backgroundLocation in the background");
-            $this->backgroundExecute("rm -rf $backgroundLocation");
-        }
-    }
-
-    public function atomicCopyPath($relativeSourcePath, $relativeDestinationPath) {
-        $fullDestinationPath = rtrim(realpath(Environment::MAGENTO_ROOT) . '/' . $relativeDestinationPath, '/');
-        $fullSourcePath = rtrim(realpath(Environment::MAGENTO_ROOT) . '/' . $relativeSourcePath, '/');
-        $timestamp = time();
-        if (file_exists($fullSourcePath)) {
-            $tmpLocation = $fullDestinationPath . '_tmp_' . $timestamp;
-            $this->log("Copy $fullSourcePath  to $tmpLocation");
-            $this->execute(sprintf('bash -c "shopt -s dotglob; cp -R %s/ %s/ || true"', $fullSourcePath, $tmpLocation));
-            $this->removePathInBackground($relativeDestinationPath);
-            $this->log("Rename $tmpLocation to $fullDestinationPath");
-            rename($tmpLocation, $fullDestinationPath);
-        }
-    }
 
     private $componentVersions = [];  // We only want to look up each component version once since it shouldn't change
 

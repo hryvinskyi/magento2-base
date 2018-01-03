@@ -10,7 +10,6 @@ namespace Script\Base\Helper;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\State;
-use Script\Base\Helpers\ArrayHelper;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
