@@ -2,10 +2,10 @@
     "name": "scriptua/magento2-base",
     "description": "N/A",
     "require": {
-      "php": "~7.0.0"
+      "php": "~7.0.0|~7.1.0"
     },
     "type": "magento2-module",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "license": "GPL-3.0",
     "autoload": {
         "files": [ "registration.php" ],
