@@ -1,12 +1,12 @@
 <?php
 /**
- * Copyright (c) 2017. Volodumur Hryvinskyi.  All rights reserved.
- * @author: <mailto:volodumur@hryvinskyi.com>
- * @github: <https://github.com/scriptua>
+ * Copyright (c) 2019. Volodymyr Hryvinskyi.  All rights reserved.
+ * @author: <mailto:volodymyr@hryvinskyi.com>
+ * @github: <https://github.com/hryvinskyi>
  */
 
 \Magento\Framework\Component\ComponentRegistrar::register(
     \Magento\Framework\Component\ComponentRegistrar::MODULE,
-    'Script_Base',
+    'Hryvinskyi_Base',
     __DIR__
 );
