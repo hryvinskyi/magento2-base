@@ -1,47 +1,15 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright (c) 2017. Volodumur Hryvinskyi.  All rights reserved.
+  ~ Copyright (c) 2019. Volodumur Hryvinskyi.  All rights reserved.
   ~ @author: <mailto:volodumur@hryvinskyi.com>
   ~ @github: <https://github.com/scriptua>
   -->
 
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
-        <tab id="script" translate="label" sortOrder="500">
-            <label>Script Modules</label>
+        <tab id="hryvinskyi" translate="label" sortOrder="400">
+            <label>Hryvinskyi Extensions</label>
         </tab>
-        <section id="script_deploy" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-            <class>separator-top</class>
-            <label>Deploy</label>
-            <tab>script</tab>
-
-            <resource>Script_QuickView::script</resource>
-            <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
-                <label>Configuration</label>
-                <field id="enable" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Enable Deploy</label>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>
-                <field id="protected_key" translate="label" type="text" sortOrder="3" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Protected Key</label>
-                </field>
-                <field id="static_deploy_exclude_themes" translate="label" type="multiselect" sortOrder="4" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Exclude themes</label>
-                    <source_model>Script\Base\Model\Config\Source\Themes</source_model>
-                    <comment>Deploy static content exclude themes</comment>
-                </field>
-                <field id="use_composer" translate="label" type="select" sortOrder="5" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Use composer</label>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>
-                <field id="composer_home" translate="label" type="text" sortOrder="6" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Composer Home</label>
-                    <depends>
-                        <field id="use_composer">1</field>
-                    </depends>
-                    <comment><![CDATA[/home/&lt;Linux User Name&gt;/.config/composer/]]></comment>
-                </field>
-            </group>
-        </section>
     </system>
 </config>

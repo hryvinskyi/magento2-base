@@ -1,22 +1,27 @@
 <?php
 /**
- * Copyright (c) 2017. Volodumur Hryvinskyi.  All rights reserved.
+ * Copyright (c) 2019. Volodumur Hryvinskyi.  All rights reserved.
  * @author: <mailto:volodumur@hryvinskyi.com>
  * @github: <https://github.com/scriptua>
  */
-namespace Script\Base\Plugin;
 
+declare(strict_types=1);
+
+namespace Hryvinskyi\Base\Plugin;
+
+use Hryvinskyi\Base\Helper\Config;
 use Magento\Developer\Helper\Data as DevHelper;
 use Magento\Developer\Model\TemplateEngine\Decorator\DebugHintsFactory;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Request\Http;
 use Magento\Framework\View\TemplateEngineFactory;
 use Magento\Framework\View\TemplateEngineInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
-use Magento\Framework\App\Request\Http;
-use Script\Base\Helper\Data;
-use Script\Base\Helpers\VarDumper;
 
+/**
+ * Class DebugHints
+ */
 class DebugHints
 {
     /**
@@ -25,34 +30,40 @@ class DebugHints
     const XML_PATH_DEBUG_TEMPLATE_HINTS_BLOCKS = 'dev/debug/template_hints_blocks';
 
     /**
+     * @var Http
+     */
+    private $request;
+
+    /**
+     * @var Config
+     */
+    private $config;
+
+    /**
      * @var ScopeConfigInterface
      */
-    protected $scopeConfig;
+    private $scopeConfig;
 
     /**
      * @var StoreManagerInterface
      */
-    protected $storeManager;
+    private $storeManager;
 
     /**
      * @var DevHelper
      */
-    protected $devHelper;
+    private $devHelper;
 
     /**
      * @var DebugHintsFactory
      */
-    protected $debugHintsFactory;
-
-    /** @var Http */
-    protected $request;
-
-    /** @var Data */
-    protected $helper;
+    private $debugHintsFactory;
 
     /**
+     * DebugHints constructor.
+     *
      * @param Http $request
-     * @param Data $helper
+     * @param Config $config
      * @param ScopeConfigInterface $scopeConfig
      * @param StoreManagerInterface $storeManager
      * @param DevHelper $devHelper
@@ -60,14 +71,14 @@ class DebugHints
      */
     public function __construct(
         Http $request,
-        Data $helper,
+        Config $config,
         ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager,
         DevHelper $devHelper,
         DebugHintsFactory $debugHintsFactory
     ) {
         $this->request = $request;
-        $this->helper = $helper;
+        $this->config = $config;
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
         $this->devHelper = $devHelper;
@@ -81,27 +92,31 @@ class DebugHints
      * @param TemplateEngineInterface $invocationResult
      *
      * @return TemplateEngineInterface
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function afterCreate(
         TemplateEngineFactory $subject,
         TemplateEngineInterface $invocationResult
-    ) {
+    ): TemplateEngineInterface {
         $storeCode = $this->storeManager->getStore()->getCode();
         if (
-            $this->helper->isEnabledLayoutDebug() &&
+            $this->config->isEnabledLayoutDebug() &&
             $this->request->getParam('hints') &&
             $this->devHelper->isDevAllowed()
         ) {
             $showBlockHints = (
-                $this->scopeConfig->getValue(self::XML_PATH_DEBUG_TEMPLATE_HINTS_BLOCKS, ScopeInterface::SCOPE_STORE, $storeCode) ||
-                $this->request->getParam('hints-block')
+                $this->scopeConfig->getValue(
+                    self::XML_PATH_DEBUG_TEMPLATE_HINTS_BLOCKS,
+                    ScopeInterface::SCOPE_STORE,
+                    $storeCode
+                ) || $this->request->getParam('hints-block')
             );
+
             return $this->debugHintsFactory->create([
                 'subject' => $invocationResult,
                 'showBlockHints' => $showBlockHints,
             ]);
         }
+
         return $invocationResult;
     }
 }

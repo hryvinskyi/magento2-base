@@ -1,41 +1,52 @@
 <?php
 /**
- * Copyright (c) 2017. Volodumur Hryvinskyi.  All rights reserved.
+ * Copyright (c) 2019. Volodumur Hryvinskyi.  All rights reserved.
  * @author: <mailto:volodumur@hryvinskyi.com>
  * @github: <https://github.com/scriptua>
  */
 
-namespace Script\Base\Observer;
+declare(strict_types=1);
 
+namespace Hryvinskyi\Base\Observer;
+
+use Hryvinskyi\Base\Helper\Config;
+use Hryvinskyi\Base\Model\Layout\LayoutXml;
 use Magento\Framework\Event\ObserverInterface;
-use Script\Base\Helper\Data;
 
 class Layout implements ObserverInterface
 {
-    /** @var string */
-    protected $layoutXml;
+    /**
+     * @var Config
+     */
+    private $config;
 
-    /** @var Data */
-    protected $helper;
+    /**
+     * @var LayoutXml
+     */
+    private $layoutXml;
 
-    public function __construct(Data $helper)
-    {
-        $this->helper = $helper;
+    /**
+     * Layout constructor.
+     *
+     * @param Config $config
+     * @param LayoutXml $layoutXml
+     */
+    public function __construct(
+        Config $config,
+        LayoutXml $layoutXml
+    ) {
+        $this->config = $config;
+        $this->layoutXml = $layoutXml;
     }
 
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
-        if (!$this->helper->isEnabledLayoutDebug()) {
+        if (!$this->config->isEnabledLayoutDebug()) {
             return;
         }
 
         /** @var \Magento\Framework\View\Layout $layout */
-        $layout = $observer->getLayout();
-        $this->layoutXml = $layout->getXmlString();
-    }
-
-    public function getLayoutXml()
-    {
-        return $this->layoutXml;
+        $layout = $observer->getData('layout');
+        $this->layoutXml->setLayout($layout->getXmlString());
     }
 }

@@ -1,15 +1,16 @@
 <?xml version="1.0"?>
 <!--
-/**
- * Copyright © Magento, Inc. All rights reserved.
- * See COPYING.txt for license details.
- */
--->
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+  ~ Copyright (c) 2019. Volodumur Hryvinskyi.  All rights reserved.
+  ~ @author: <mailto:volodumur@hryvinskyi.com>
+  ~ @github: <https://github.com/scriptua>
+  -->
+
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
     <event name="controller_front_send_response_before">
-        <observer name="script_base_layout_debug_response" instance="Script\Base\Observer\Response"/>
+        <observer name="Hryvinskyi_Base::layout_debug_response" instance="Hryvinskyi\Base\Observer\Response"/>
     </event>
     <event name="layout_generate_blocks_after">
-        <observer name="script_base_layout_debug_layout" instance="Script\Base\Observer\Layout"/>
+        <observer name="Hryvinskyi_Base::layout_debug_layout" instance="Hryvinskyi\Base\Observer\Layout"/>
     </event>
 </config>

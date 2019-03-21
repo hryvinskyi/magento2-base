@@ -5,30 +5,56 @@
  * @github: <https://github.com/scriptua>
  */
 
-namespace Script\Base\Plugin;
+namespace Hryvinskyi\Base\Plugin;
 
+use Hryvinskyi\Base\Helper\Config;
 use Magento\Framework\App\Request\Http;
-use Script\Base\Helper\Data;
+use Magento\Framework\View\Layout as ViewLayout;
 
+/**
+ * Class Layout
+ */
 class Layout
 {
-    /** @var Http */
-    protected $request;
+    /**
+     * @var Http
+     */
+    private $request;
 
-    /** @var Data */
-    protected $helper;
+    /**
+     * @var Config
+     */
+    private $config;
 
+    /**
+     * Layout constructor.
+     *
+     * @param Http $request
+     * @param Config $config
+     */
     public function __construct(
         Http $request,
-        Data $helper
+        Config $config
     ) {
         $this->request = $request;
-        $this->helper = $helper;
+        $this->config = $config;
     }
 
-    public function afterIsCacheable(\Magento\Framework\View\Layout $subject, $result)
+    /**
+     * @param ViewLayout $subject
+     * @param $result
+     *
+     * @return bool
+     */
+    public function afterIsCacheable(ViewLayout $subject, $result): bool
     {
-        if ($this->helper->isEnabledLayoutDebug() && ($this->request->getParam('xml') || $this->request->getParam('hints'))) {
+        if (
+            $this->config->isEnabledLayoutDebug()
+            && (
+                $this->request->getParam('xml')
+                || $this->request->getParam('hints')
+            )
+        ) {
             return false;
         }
 

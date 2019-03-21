@@ -1,50 +1,82 @@
 <?php
 /**
- * Copyright (c) 2017. Volodumur Hryvinskyi.  All rights reserved.
+ * Copyright (c) 2019. Volodumur Hryvinskyi.  All rights reserved.
  * @author: <mailto:volodumur@hryvinskyi.com>
  * @github: <https://github.com/scriptua>
  */
 
-namespace Script\Base\Observer;
+declare(strict_types=1);
 
+namespace Hryvinskyi\Base\Observer;
+
+use Hryvinskyi\Base\Helper\Config;
+use Hryvinskyi\Base\Model\Layout\LayoutXml;
+use Hryvinskyi\Base\Model\Layout\NoSetLayoutException;
+use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Script\Base\Helper\Data;
+use Magento\Framework\Message\ManagerInterface;
 
 class Response implements ObserverInterface
 {
-    /** @var Layout */
-    protected $layoutObserver;
+    /**
+     * @var LayoutXml
+     */
+    private $layoutXml;
 
-    /** @var Data */
-    protected $helper;
+    /**
+     * @var Config
+     */
+    private $config;
 
+    /**
+     * @var ManagerInterface
+     */
+    private $messageManager;
+
+
+    /**
+     * Response constructor.
+     *
+     * @param LayoutXml $layoutXml
+     * @param Config $config
+     * @param ManagerInterface $messageManager
+     */
     public function __construct(
-        Layout $layoutObserver,
-        Data $helper
+        LayoutXml $layoutXml,
+        Config $config,
+        ManagerInterface $messageManager
     ) {
-        $this->layoutObserver = $layoutObserver;
-        $this->helper = $helper;
+        $this->layoutXml = $layoutXml;
+        $this->config = $config;
+        $this->messageManager = $messageManager;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    /**
+     * @param Observer $observer
+     */
+    public function execute(Observer $observer)
     {
-        if (!$this->helper->isEnabledLayoutDebug()) {
+        if (!$this->config->isEnabledLayoutDebug()) {
             return;
         }
 
         /** @var \Magento\Framework\App\Request\Http $request */
-        $request = $observer->getRequest();
+        $request = $observer->getData('request');
         if ($request->getParam('xml')) {
-            /** @var \Magento\Framework\App\Response\Http $response */
-            $response = $observer->getResponse();
-            $response->setHeader('Content-type', 'application/xml', true);
-            //Extremely hacky, but a quick fix to render the output directly in browser
-            $layout = str_replace(
-                '<layout>',
-                '<layout xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
-                $this->layoutObserver->getLayoutXml()
-            );
-            $response->setContent('<?xml version="1.0" encoding="UTF-8" ?>' . $layout);
+            try {
+                /** @var \Magento\Framework\App\Response\Http $response */
+                $response = $observer->getData('response');
+                $response->setHeader('Content-type', 'application/xml', true);
+
+                $layout = str_replace(
+                    '<layout>',
+                    '<layout xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
+                    $this->layoutXml->getLayout()
+                );
+                $response->setContent('<?xml version="1.0" encoding="UTF-8" ?>' . $layout);
+            } catch (NoSetLayoutException $exception) {
+                $this->messageManager->addErrorMessage($exception->getMessage());
+            }
         }
     }
 }

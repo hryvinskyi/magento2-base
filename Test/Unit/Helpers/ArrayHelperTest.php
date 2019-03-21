@@ -5,11 +5,11 @@
  * @github: <https://github.com/scriptua>
  */
 
-namespace Script\Base\Test\Unit\Helpers;
+namespace Hryvinskyi\Base\Test\Unit\Helpers;
 
-use Script\Base\Helpers\UnsetArrayValue;
-use Script\Base\Helpers\ReplaceArrayValue;
-use Script\Base\Helpers\ArrayHelper;
+use Hryvinskyi\Base\Helper\UnsetArrayValue;
+use Hryvinskyi\Base\Helper\ReplaceArrayValue;
+use Hryvinskyi\Base\Helper\ArrayHelper;
 
 class Base {
     public static function className()

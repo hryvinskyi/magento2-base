@@ -1,11 +1,11 @@
 <?php
 /**
- * Copyright (c) 2017. Volodumur Hryvinskyi.  All rights reserved.
+ * Copyright (c) 2019. Volodumur Hryvinskyi.  All rights reserved.
  * @author: <mailto:volodumur@hryvinskyi.com>
  * @github: <https://github.com/scriptua>
  */
 
-namespace Script\Base\Helpers;
+namespace Hryvinskyi\Base\Helper;
 
 class ArrayHelper
 {
@@ -145,17 +145,17 @@ class ArrayHelper
      *
      * ```php
      * // working with array
-     * $username = \Script\Base\Helpers\ArrayHelper::getValue($_POST, 'username');
+     * $username = \Hryvinskyi\Base\Helper\ArrayHelper::getValue($_POST, 'username');
      * // working with object
-     * $username = \Script\Base\Helpers\ArrayHelper::getValue($user, 'username');
+     * $username = \Hryvinskyi\Base\Helper\ArrayHelper::getValue($user, 'username');
      * // working with anonymous function
-     * $fullName = \Script\Base\Helpers\ArrayHelper::getValue($user, function ($user, $defaultValue) {
+     * $fullName = \Hryvinskyi\Base\Helper\ArrayHelper::getValue($user, function ($user, $defaultValue) {
      *     return $user->firstName . ' ' . $user->lastName;
      * });
      * // using dot format to retrieve the property of embedded object
-     * $street = \Script\Base\Helpers\ArrayHelper::getValue($users, 'address.street');
+     * $street = \Hryvinskyi\Base\Helper\ArrayHelper::getValue($users, 'address.street');
      * // using an array of keys to retrieve the value
-     * $value = \Script\Base\Helpers\ArrayHelper::getValue($versions, ['1.0', 'date']);
+     * $value = \Hryvinskyi\Base\Helper\ArrayHelper::getValue($versions, ['1.0', 'date']);
      * ```
      *
      * @param array|object $array array or object to extract value from
@@ -225,7 +225,7 @@ class ArrayHelper
      * ```php
      * // $array = ['type' => 'A', 'options' => [1, 2]];
      * // working with array
-     * $type = \Script\Base\Helpers\ArrayHelper::remove($array, 'type');
+     * $type = \Hryvinskyi\Base\Helper\ArrayHelper::remove($array, 'type');
      * // $array content
      * // $array = ['options' => [1, 2]];
      * ```
@@ -254,7 +254,7 @@ class ArrayHelper
      *
      * ```php
      * $array = ['Bob' => 'Dylan', 'Michael' => 'Jackson', 'Mick' => 'Jagger', 'Janet' => 'Jackson'];
-     * $removed = \Script\Base\Helpers\ArrayHelper::removeValue($array, 'Jackson');
+     * $removed = \Hryvinskyi\Base\Helper\ArrayHelper::removeValue($array, 'Jackson');
      * // result:
      * // $array = ['Bob' => 'Dylan', 'Mick' => 'Jagger'];
      * // $removed = ['Michael' => 'Jackson', 'Janet' => 'Jackson'];
@@ -808,20 +808,20 @@ class ArrayHelper
      *     'E' => 1,
      * ];
      *
-     * $result = \Script\Base\Helpers\ArrayHelper::filter($array, ['A']);
+     * $result = \Hryvinskyi\Base\Helper\ArrayHelper::filter($array, ['A']);
      * // $result will be:
      * // [
      * //     'A' => [1, 2],
      * // ]
      *
-     * $result = \Script\Base\Helpers\ArrayHelper::filter($array, ['A', 'B.C']);
+     * $result = \Hryvinskyi\Base\Helper\ArrayHelper::filter($array, ['A', 'B.C']);
      * // $result will be:
      * // [
      * //     'A' => [1, 2],
      * //     'B' => ['C' => 1],
      * // ]
      *
-     * $result = \Script\Base\Helpers\ArrayHelper::filter($array, ['B', '!B.C']);
+     * $result = \Hryvinskyi\Base\Helper\ArrayHelper::filter($array, ['B', '!B.C']);
      * // $result will be:
      * // [
      * //     'B' => ['D' => 2],

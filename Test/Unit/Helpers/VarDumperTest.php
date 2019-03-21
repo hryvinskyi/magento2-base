@@ -5,10 +5,10 @@
  * @github: <https://github.com/scriptua>
  */
 
-namespace Script\Base\Test\Unit\Helpers;
+namespace Hryvinskyi\Base\Test\Unit\Helpers;
 
 use PHPUnit\Framework\TestCase;
-use Script\Base\Helpers\VarDumper;
+use Hryvinskyi\Base\Helper\VarDumper;
 
 class CustomDebugInfo
 {

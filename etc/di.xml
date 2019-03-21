@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright (c) 2017. Volodumur Hryvinskyi.  All rights reserved.
+  ~ Copyright (c) 2019. Volodumur Hryvinskyi.  All rights reserved.
   ~ @author: <mailto:volodumur@hryvinskyi.com>
   ~ @github: <https://github.com/scriptua>
   -->
@@ -8,9 +8,9 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <type name="Magento\Framework\View\Layout">
-        <plugin name="script_base_plugin_layout" type="Script\Base\Plugin\Layout" sortOrder="10"/>
+        <plugin name="Hryvinskyi_Base::plugin_layout" type="Hryvinskyi\Base\Plugin\Layout" sortOrder="10"/>
     </type>
     <type name="Magento\Framework\View\TemplateEngineFactory">
-        <plugin name="script_base_debug_hints" type="Script\Base\Plugin\DebugHints" sortOrder="10"/>
+        <plugin name="Hryvinskyi_Base::debug_hints" type="Hryvinskyi\Base\Plugin\DebugHints" sortOrder="10"/>
     </type>
 </config>

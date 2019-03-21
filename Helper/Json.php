@@ -1,11 +1,11 @@
 <?php
 /**
- * Copyright (c) 2017. Volodumur Hryvinskyi.  All rights reserved.
+ * Copyright (c) 2019. Volodumur Hryvinskyi.  All rights reserved.
  * @author: <mailto:volodumur@hryvinskyi.com>
  * @github: <https://github.com/scriptua>
  */
 
-namespace Script\Base\Helpers;
+namespace Hryvinskyi\Base\Helper;
 
 
 class Json

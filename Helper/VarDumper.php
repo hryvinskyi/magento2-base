@@ -1,13 +1,13 @@
 <?php
 /**
- * Copyright (c) 2017. Volodumur Hryvinskyi.  All rights reserved.
+ * Copyright (c) 2019. Volodumur Hryvinskyi.  All rights reserved.
  * @author: <mailto:volodumur@hryvinskyi.com>
  * @github: <https://github.com/scriptua>
  */
 
-namespace Script\Base\Helpers;
+namespace Hryvinskyi\Base\Helper;
 
-use Script\Base\Helpers\InvalidValueException;
+use Hryvinskyi\Base\Helper\InvalidValueException;
 
 class VarDumper
 {
