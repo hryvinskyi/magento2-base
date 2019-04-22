@@ -100,7 +100,7 @@ class ArrayHelperTest extends \PHPUnit\Framework\TestCase
 
     public function testToArray()
     {
-        $dataArrayable = $this->getMockBuilder('Script\\Base\\Helpers\\Arrayable')->getMock();
+        $dataArrayable = $this->getMockBuilder('Hryvinskyi\\Base\\Helper\\Arrayable')->getMock();
         $dataArrayable->method('toArray')->willReturn([]);
         $this->assertEquals([], ArrayHelper::toArray($dataArrayable));
         $this->assertEquals(['foo'], ArrayHelper::toArray('foo'));
