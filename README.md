@@ -1,8 +1,6 @@
 Magento 2 Script Base Module
 
 # Installation Guide
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fhryvinskyi%2Fmagento2-base.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fhryvinskyi%2Fmagento2-base?ref=badge_shield)
-
 
 ```
 composer require scriptua/magento2-base
