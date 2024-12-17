@@ -15,6 +15,6 @@
     </type>
 
     <type name="Magento\Framework\View\TemplateEngine\Php">
-        <plugin name="Hryvinskyi_Base::add_view_models_registry_variable" type="Hyva\Theme\Plugin\AddViewModelsRegistryVariable"/>
+        <plugin name="Hryvinskyi_Base::add_view_models_registry_variable" type="Hryvinskyi\Base\Plugin\AddViewModelsRegistryVariable"/>
     </type>
 </config>
