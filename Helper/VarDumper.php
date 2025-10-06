@@ -1,8 +1,13 @@
 <?php
 /**
- * Copyright (c) 2019. Volodymyr Hryvinskyi.  All rights reserved.
- * @author: <mailto:volodymyr@hryvinskyi.com>
- * @github: <https://github.com/hryvinskyi>
+ * @link http://www.yiiframework.com/
+ * @copyright Copyright (c) 2008 Yii Software LLC
+ * @license http://www.yiiframework.com/license/ (BSD-3-Clause)
+ *
+ * Modified for Magento 2
+ * @copyright Copyright (c) 2019 Volodymyr Hryvinskyi. All rights reserved.
+ * @author Volodymyr Hryvinskyi <mailto:volodymyr@hryvinskyi.com>
+ * @github <https://github.com/hryvinskyi>
  */
 
 namespace Hryvinskyi\Base\Helper;
@@ -58,10 +63,10 @@ class VarDumper
                 self::$_output .= $var ? 'true' : 'false';
                 break;
             case 'integer':
-                self::$_output .= "$var";
+                self::$_output .= (string)$var;
                 break;
             case 'double':
-                self::$_output .= "$var";
+                self::$_output .= (string)$var;
                 break;
             case 'string':
                 self::$_output .= "'" . addslashes($var) . "'";

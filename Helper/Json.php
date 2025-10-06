@@ -1,8 +1,13 @@
 <?php
 /**
- * Copyright (c) 2019. Volodymyr Hryvinskyi.  All rights reserved.
- * @author: <mailto:volodymyr@hryvinskyi.com>
- * @github: <https://github.com/hryvinskyi>
+ * @link http://www.yiiframework.com/
+ * @copyright Copyright (c) 2008 Yii Software LLC
+ * @license http://www.yiiframework.com/license/ (BSD-3-Clause)
+ *
+ * Modified for Magento 2
+ * @copyright Copyright (c) 2019 Volodymyr Hryvinskyi. All rights reserved.
+ * @author Volodymyr Hryvinskyi <mailto:volodymyr@hryvinskyi.com>
+ * @github <https://github.com/hryvinskyi>
  */
 
 namespace Hryvinskyi\Base\Helper;
@@ -11,18 +16,32 @@ namespace Hryvinskyi\Base\Helper;
 class Json
 {
     /**
+     * @var bool|null Enables human-readable output a.k.a. Pretty Print.
+     *  This can be useful for debugging during development but is not recommended in a production environment!
+     *  In case `prettyPrint` is `null` (default) the `options` passed to `encode` functions will not be changed.
+     */
+    public static $prettyPrint;
+
+    /**
+     * @var bool Avoids objects with zero-indexed keys to be encoded as array
+     * `Json::encode((object)['test'])` will be encoded as an object not as an array. This matches the behaviour of `json_encode()`.
+     * Defaults too false to avoid any backwards compatibility issues.
+     * Enable for single purpose: `Json::$keepObjectType = true;`
+     * @see JsonResponseFormatter documentation to enable for all JSON responses
+     */
+    public static $keepObjectType = false;
+
+    /**
      * List of JSON Error messages assigned to constant names for better handling of version differences
      * @var array
      */
     public static $jsonErrorMessages = [
-        'JSON_ERROR_DEPTH' => 'The maximum stack depth has been exceeded.',
-        'JSON_ERROR_STATE_MISMATCH' => 'Invalid or malformed JSON.',
-        'JSON_ERROR_CTRL_CHAR' => 'Control character error, possibly incorrectly encoded.',
-        'JSON_ERROR_SYNTAX' => 'Syntax error.',
-        'JSON_ERROR_UTF8' => 'Malformed UTF-8 characters, possibly incorrectly encoded.', // PHP 5.3.3
-        'JSON_ERROR_RECURSION' => 'One or more recursive references in the value to be encoded.', // PHP 5.5.0
-        'JSON_ERROR_INF_OR_NAN' => 'One or more NAN or INF values in the value to be encoded', // PHP 5.5.0
-        'JSON_ERROR_UNSUPPORTED_TYPE' => 'A value of a type that cannot be encoded was given', // PHP 5.5.0
+        'JSON_ERROR_SYNTAX' => 'Syntax error',
+        'JSON_ERROR_UNSUPPORTED_TYPE' => 'Type is not supported',
+        'JSON_ERROR_DEPTH' => 'The maximum stack depth has been exceeded',
+        'JSON_ERROR_STATE_MISMATCH' => 'Invalid or malformed JSON',
+        'JSON_ERROR_CTRL_CHAR' => 'Control character error, possibly incorrectly encoded',
+        'JSON_ERROR_UTF8' => 'Malformed UTF-8 characters, possibly incorrectly encoded',
     ];
 
     /**
@@ -37,7 +56,7 @@ class Json
      *
      * @param mixed $value the data to be encoded.
      * @param int $options the encoding options. For more details please refer to
-     * <http://www.php.net/manual/en/function.json-encode.php>. Default is `JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE`.
+     * <https://www.php.net/manual/en/function.json-encode.php>. Default is `JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE`.
      * @return string the encoding result.
      * @throws InvalidParamException if there is any encoding error.
      */
@@ -48,6 +67,13 @@ class Json
         set_error_handler(function () {
             static::handleJsonError(JSON_ERROR_SYNTAX);
         }, E_WARNING);
+
+        if (static::$prettyPrint === true) {
+            $options |= JSON_PRETTY_PRINT;
+        } elseif (static::$prettyPrint === false) {
+            $options &= ~JSON_PRETTY_PRINT;
+        }
+
         $json = json_encode($value, $options);
         restore_error_handler();
         static::handleJsonError(json_last_error());
@@ -95,7 +121,7 @@ class Json
     /**
      * Handles [[encode()]] and [[decode()]] errors by throwing exceptions with the respective error message.
      *
-     * @param int $lastError error code from [json_last_error()](http://php.net/manual/en/function.json-last-error.php).
+     * @param int $lastError error code from [json_last_error()](https://www.php.net/manual/en/function.json-last-error.php).
      * @throws InvalidParamException if there is any encoding/decoding error.
      * @since 2.0.6
      */
@@ -104,15 +130,17 @@ class Json
         if ($lastError === JSON_ERROR_NONE) {
             return;
         }
-        $availableErrors = [];
+
+        if (PHP_VERSION_ID >= 50500) {
+            throw new InvalidParamException(json_last_error_msg(), $lastError);
+        }
+
         foreach (static::$jsonErrorMessages as $const => $message) {
-            if (defined($const)) {
-                $availableErrors[constant($const)] = $message;
+            if (defined($const) && constant($const) === $lastError) {
+                throw new InvalidParamException($message, $lastError);
             }
         }
-        if (isset($availableErrors[$lastError])) {
-            throw new InvalidParamException($availableErrors[$lastError], $lastError);
-        }
+
         throw new InvalidParamException('Unknown JSON encoding/decoding error.');
     }
 
@@ -125,24 +153,52 @@ class Json
      */
     protected static function processData($data, &$expressions, $expPrefix)
     {
+        $revertToObject = false;
+
         if (is_object($data)) {
             if ($data instanceof \JsonSerializable) {
                 return static::processData($data->jsonSerialize(), $expressions, $expPrefix);
-            } elseif ($data instanceof Arrayable) {
+            }
+
+            if ($data instanceof \DateTimeInterface) {
+                return static::processData((array)$data, $expressions, $expPrefix);
+            }
+
+            if ($data instanceof Arrayable) {
                 $data = $data->toArray();
+            } elseif ($data instanceof \Generator) {
+                $_data = [];
+                foreach ($data as $name => $value) {
+                    $_data[$name] = static::processData($value, $expressions, $expPrefix);
+                }
+                $data = $_data;
             } elseif ($data instanceof \SimpleXMLElement) {
                 $data = (array) $data;
+
+                // Avoid empty elements to be returned as array.
+                // Not breaking BC because empty array was always cast to stdClass before.
+                $revertToObject = true;
             } else {
+                /*
+                 * $data type is changed to array here and its elements will be processed further
+                 * We must cast $data back to object later to keep intended dictionary type in JSON.
+                 * Revert is only done when keepObjectType flag is provided to avoid breaking BC
+                 */
+                $revertToObject = static::$keepObjectType;
+
                 $result = [];
                 foreach ($data as $name => $value) {
                     $result[$name] = $value;
                 }
                 $data = $result;
-            }
-            if ($data === []) {
-                return new \stdClass();
+
+                // Avoid empty objects to be returned as array (would break BC without keepObjectType flag)
+                if ($data === []) {
+                    $revertToObject = true;
+                }
             }
         }
+
         if (is_array($data)) {
             foreach ($data as $key => $value) {
                 if (is_array($value) || is_object($value)) {
@@ -150,6 +206,7 @@ class Json
                 }
             }
         }
-        return $data;
+
+        return $revertToObject ? (object) $data : $data;
     }
 }

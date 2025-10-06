@@ -1,11 +1,20 @@
 <?php
 /**
- * Copyright (c) 2019. Volodymyr Hryvinskyi.  All rights reserved.
- * @author: <mailto:volodymyr@hryvinskyi.com>
- * @github: <https://github.com/hryvinskyi>
+ * @link http://www.yiiframework.com/
+ * @copyright Copyright (c) 2008 Yii Software LLC
+ * @license http://www.yiiframework.com/license/ (BSD-3-Clause)
+ *
+ * Modified for Magento 2
+ * @copyright Copyright (c) 2019 Volodymyr Hryvinskyi. All rights reserved.
+ * @author Volodymyr Hryvinskyi <mailto:volodymyr@hryvinskyi.com>
+ * @github <https://github.com/hryvinskyi>
  */
 
 namespace Hryvinskyi\Base\Helper;
+
+use ArrayAccess;
+use InvalidArgumentException;
+use Traversable;
 
 class ArrayHelper
 {
@@ -56,6 +65,8 @@ class ArrayHelper
             }
 
             return $object;
+        } elseif ($object instanceof \DateTimeInterface) {
+            return (array)$object;
         } elseif (is_object($object)) {
             if (!empty($properties)) {
                 $className = get_class($object);
@@ -82,9 +93,9 @@ class ArrayHelper
             }
 
             return $recursive ? static::toArray($result, $properties) : $result;
-        } else {
-            return [$object];
         }
+
+        return [$object];
     }
 
     /**
@@ -107,8 +118,7 @@ class ArrayHelper
         $args = func_get_args();
         $res = array_shift($args);
         while (!empty($args)) {
-            $next = array_shift($args);
-            foreach ($next as $k => $v) {
+            foreach (array_shift($args) as $k => $v) {
                 if ($v instanceof UnsetArrayValue) {
                     unset($res[$k]);
                 } elseif ($v instanceof ReplaceArrayValue) {
@@ -120,12 +130,13 @@ class ArrayHelper
                         $res[$k] = $v;
                     }
                 } elseif (is_array($v) && isset($res[$k]) && is_array($res[$k])) {
-                    $res[$k] = self::merge($res[$k], $v);
+                    $res[$k] = static::merge($res[$k], $v);
                 } else {
                     $res[$k] = $v;
                 }
             }
         }
+
         return $res;
     }
 
@@ -172,6 +183,7 @@ class ArrayHelper
         if ($key instanceof \Closure) {
             return $key($array, $default);
         }
+
         if (is_array($key)) {
             $lastKey = array_pop($key);
             foreach ($key as $keyPart) {
@@ -179,20 +191,36 @@ class ArrayHelper
             }
             $key = $lastKey;
         }
-        if (is_array($array) && (isset($array[$key]) || array_key_exists($key, $array))) {
+
+        if (is_object($array) && property_exists($array, $key)) {
+            return $array->$key;
+        }
+
+        if (static::keyExists($key, $array)) {
             return $array[$key];
         }
-        if (($pos = strrpos($key, '.')) !== false) {
+
+        if ($key && ($pos = strrpos($key, '.')) !== false) {
             $array = static::getValue($array, substr($key, 0, $pos), $default);
             $key = substr($key, $pos + 1);
+        }
+
+        if (static::keyExists($key, $array)) {
+            return $array[$key];
         }
         if (is_object($array)) {
             // this is expected to fail if the property does not exist, or __get() is not implemented
             // it is not reliably possible to check whether a property is accessible beforehand
-            return $array->$key;
-        } elseif (is_array($array)) {
-            return (isset($array[$key]) || array_key_exists($key, $array)) ? $array[$key] : $default;
+            try {
+                return $array->$key;
+            } catch (\Exception $e) {
+                if ($array instanceof ArrayAccess) {
+                    return $default;
+                }
+                throw $e;
+            }
         }
+
         return $default;
     }
 
@@ -202,7 +230,9 @@ class ArrayHelper
             $array = $value;
             return;
         }
+
         $keys = is_array($path) ? $path : explode('.', $path);
+
         while (count($keys) > 1) {
             $key = array_shift($keys);
             if (!isset($array[$key])) {
@@ -213,6 +243,7 @@ class ArrayHelper
             }
             $array = &$array[$key];
         }
+
         $array[array_shift($keys)] = $value;
     }
 
@@ -237,7 +268,7 @@ class ArrayHelper
      */
     public static function remove(&$array, $key, $default = null)
     {
-        if (is_array($array) && (isset($array[$key]) || array_key_exists($key, $array))) {
+        if (is_array($array) && (array_key_exists($key, $array))) {
             $value = $array[$key];
             unset($array[$key]);
 
@@ -276,6 +307,7 @@ class ArrayHelper
                 }
             }
         }
+
         return $result;
     }
 
@@ -499,6 +531,9 @@ class ArrayHelper
      */
     public static function map($array, $from, $to, $group = null)
     {
+        if (is_string($from) && is_string($to) && $group === null && strpos($from, '.') === false && strpos($to, '.') === false) {
+            return array_column($array, $to, $from);
+        }
         $result = [];
         foreach ($array as $element) {
             $key = static::getValue($element, $from);
@@ -525,18 +560,24 @@ class ArrayHelper
     public static function keyExists($key, $array, $caseSensitive = true)
     {
         if ($caseSensitive) {
-            // Function `isset` checks key faster but skips `null`, `array_key_exists` handles this case
-            // http://php.net/manual/en/function.array-key-exists.php#107786
-            return isset($array[$key]) || array_key_exists($key, $array);
-        } else {
-            foreach (array_keys($array) as $k) {
-                if (strcasecmp($key, $k) === 0) {
-                    return true;
-                }
+            if (is_array($array) && array_key_exists($key, $array)) {
+                return true;
             }
-
-            return false;
+            // Cannot use `array_has_key` on Objects for PHP 7.4+, therefore we need to check using [[ArrayAccess::offsetExists()]]
+            return $array instanceof ArrayAccess && $array->offsetExists($key);
         }
+
+        if ($array instanceof ArrayAccess) {
+            throw new InvalidArgumentException('Second parameter($array) cannot be ArrayAccess in case insensitive mode');
+        }
+
+        foreach (array_keys($array) as $k) {
+            if (strcasecmp($key, $k) === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -565,23 +606,23 @@ class ArrayHelper
         if (is_scalar($direction)) {
             $direction = array_fill(0, $n, $direction);
         } elseif (count($direction) !== $n) {
-            throw new InvalidParamException('The length of $direction parameter must be the same as that of $keys.');
+            throw new InvalidArgumentException('The length of $direction parameter must be the same as that of $keys.');
         }
         if (is_scalar($sortFlag)) {
             $sortFlag = array_fill(0, $n, $sortFlag);
         } elseif (count($sortFlag) !== $n) {
-            throw new InvalidParamException('The length of $sortFlag parameter must be the same as that of $keys.');
+            throw new InvalidArgumentException('The length of $sortFlag parameter must be the same as that of $keys.');
         }
         $args = [];
-        foreach ($keys as $i => $key) {
+        foreach ($keys as $i => $k) {
             $flag = $sortFlag[$i];
-            $args[] = static::getColumn($array, $key);
+            $args[] = static::getColumn($array, $k);
             $args[] = $direction[$i];
             $args[] = $flag;
         }
 
         // This fix is used for cases when main sorting specified by columns has equal values
-        // Without it it will lead to Fatal Error: Nesting level too deep - recursive dependency?
+        // Without it will lead to Fatal Error: Nesting level too deep - recursive dependency?
         $args[] = range(1, count($array));
         $args[] = SORT_ASC;
         $args[] = SORT_NUMERIC;
@@ -638,12 +679,12 @@ class ArrayHelper
         $d = [];
         foreach ($data as $key => $value) {
             if (!$valuesOnly && is_string($key)) {
-                $key = htmlspecialchars_decode($key, ENT_QUOTES);
+                $key = htmlspecialchars_decode($key, ENT_QUOTES | ENT_SUBSTITUTE);
             }
             if (is_string($value)) {
-                $d[$key] = htmlspecialchars_decode($value, ENT_QUOTES);
+                $d[$key] = htmlspecialchars_decode($value, ENT_QUOTES | ENT_SUBSTITUTE);
             } elseif (is_array($value)) {
-                $d[$key] = static::htmlDecode($value);
+                $d[$key] = static::htmlDecode($value, $valuesOnly);
             } else {
                 $d[$key] = $value;
             }
@@ -667,7 +708,7 @@ class ArrayHelper
      */
     public static function isAssociative($array, $allStrings = true)
     {
-        if (!is_array($array) || empty($array)) {
+        if (empty($array) || !is_array($array)) {
             return false;
         }
 
@@ -677,15 +718,17 @@ class ArrayHelper
                     return false;
                 }
             }
+
             return true;
-        } else {
-            foreach ($array as $key => $value) {
-                if (is_string($key)) {
-                    return true;
-                }
-            }
-            return false;
         }
+
+        foreach ($array as $key => $value) {
+            if (is_string($key)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -711,16 +754,19 @@ class ArrayHelper
             return true;
         }
 
+        $keys = array_keys($array);
+
         if ($consecutive) {
-            return array_keys($array) === range(0, count($array) - 1);
-        } else {
-            foreach ($array as $key => $value) {
-                if (!is_int($key)) {
-                    return false;
-                }
-            }
-            return true;
+            return $keys === array_keys($keys);
         }
+
+        foreach ($keys as $key) {
+            if (!is_int($key)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -738,16 +784,18 @@ class ArrayHelper
      */
     public static function isIn($needle, $haystack, $strict = false)
     {
-        if ($haystack instanceof \Traversable) {
-            foreach ($haystack as $value) {
-                if ($needle == $value && (!$strict || $needle === $value)) {
-                    return true;
-                }
-            }
-        } elseif (is_array($haystack)) {
+        if (!static::isTraversable($haystack)) {
+            throw new InvalidArgumentException('Argument $haystack must be an array or implement Traversable');
+        }
+
+        if (is_array($haystack)) {
             return in_array($needle, $haystack, $strict);
-        } else {
-            throw new InvalidParamException('Argument $haystack must be an array or implement Traversable');
+        }
+
+        foreach ($haystack as $value) {
+            if ($strict ? $needle === $value : $needle == $value) {
+                return true;
+            }
         }
 
         return false;
@@ -765,7 +813,7 @@ class ArrayHelper
      */
     public static function isTraversable($var)
     {
-        return is_array($var) || $var instanceof \Traversable;
+        return is_array($var) || $var instanceof Traversable;
     }
 
     /**
@@ -782,15 +830,17 @@ class ArrayHelper
      */
     public static function isSubset($needles, $haystack, $strict = false)
     {
-        if (is_array($needles) || $needles instanceof \Traversable) {
-            foreach ($needles as $needle) {
-                if (!static::isIn($needle, $haystack, $strict)) {
-                    return false;
-                }
-            }
-            return true;
+        if (!static::isTraversable($needles)) {
+            throw new InvalidArgumentException('Argument $needles must be an array or implement Traversable');
         }
-        throw new InvalidParamException('Argument $needles must be an array or implement Traversable');
+
+        foreach ($needles as $needle) {
+            if (!static::isIn($needle, $haystack, $strict)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -840,41 +890,53 @@ class ArrayHelper
     public static function filter($array, $filters)
     {
         $result = [];
-        $forbiddenVars = [];
+        $excludeFilters = [];
 
-        foreach ($filters as $var) {
-            $keys = explode('.', $var);
-            $globalKey = $keys[0];
-            $localKey = isset($keys[1]) ? $keys[1] : null;
-
-            if ($globalKey[0] === '!') {
-                $forbiddenVars[] = [
-                    substr($globalKey, 1),
-                    $localKey,
-                ];
+        foreach ($filters as $filter) {
+            if (!is_string($filter) && !is_int($filter)) {
                 continue;
             }
 
-            if (empty($array[$globalKey])) {
+            if (is_string($filter) && strncmp($filter, '!', 1) === 0) {
+                $excludeFilters[] = substr($filter, 1);
                 continue;
             }
-            if ($localKey === null) {
-                $result[$globalKey] = $array[$globalKey];
-                continue;
+
+            $nodeValue = $array; //set $array as root node
+            $keys = explode('.', (string) $filter);
+            foreach ($keys as $key) {
+                if (!array_key_exists($key, $nodeValue)) {
+                    continue 2; //Jump to next filter
+                }
+                $nodeValue = $nodeValue[$key];
             }
-            if (!isset($array[$globalKey][$localKey])) {
-                continue;
+
+            //We've found a value now let's insert it
+            $resultNode = &$result;
+            foreach ($keys as $key) {
+                if (!array_key_exists($key, $resultNode)) {
+                    $resultNode[$key] = [];
+                }
+                $resultNode = &$resultNode[$key];
             }
-            if (!array_key_exists($globalKey, $result)) {
-                $result[$globalKey] = [];
-            }
-            $result[$globalKey][$localKey] = $array[$globalKey][$localKey];
+            $resultNode = $nodeValue;
         }
 
-        foreach ($forbiddenVars as $var) {
-            list($globalKey, $localKey) = $var;
-            if (array_key_exists($globalKey, $result)) {
-                unset($result[$globalKey][$localKey]);
+        foreach ($excludeFilters as $filter) {
+            $excludeNode = &$result;
+            $keys = explode('.', (string) $filter);
+            $numNestedKeys = count($keys) - 1;
+            foreach ($keys as $i => $key) {
+                if (!array_key_exists($key, $excludeNode)) {
+                    continue 2; //Jump to next filter
+                }
+
+                if ($i < $numNestedKeys) {
+                    $excludeNode = &$excludeNode[$key];
+                } else {
+                    unset($excludeNode[$key]);
+                    break;
+                }
             }
         }
 

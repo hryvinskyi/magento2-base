@@ -50,11 +50,12 @@ class ViewModelRegistry
     /**
      * Returns view model instance for given FQN
      *
-     * @template T
+     * @template T of ArgumentInterface
      * @param class-string<T> $viewModelClass Fully qualified class name (FQN)
      * @param AbstractBlock|null $block Only required if view model is used within a template cached in ESI (ttl="n" in layout XML)
-     * @return T
-     * @throws InvalidViewModelClass if class not found or not a view model
+     * @return ArgumentInterface
+     * @throws LocalizedException If class not found or not a view model
+     * @phpstan-return T
      */
     public function require(string $viewModelClass, AbstractBlock $block = null): ArgumentInterface
     {
@@ -71,7 +72,7 @@ class ViewModelRegistry
         // If we do, the main page will be purged for those tags, even though we only want to purge the ESI records.
         // On ESI requests isVarnishEnabled() is false, so we don't need to check for a ttl value.
         // If isVarnishEnabled() is true, this is a main page request (not ESI), so we check if the block is rendered within an ESI section.
-        if (! $block || !($this->isVarnishEnabled() && $this->isCalledWithinEsiBlock($block))) {
+        if (!$block || !($this->isVarnishEnabled() && $this->isCalledWithinEsiBlock($block))) {
             $this->viewModelCacheTags->collectFrom($object);
         }
 

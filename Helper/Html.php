@@ -1,8 +1,13 @@
 <?php
 /**
- * Copyright (c) 2019. Volodymyr Hryvinskyi.  All rights reserved.
- * @author: <mailto:volodymyr@hryvinskyi.com>
- * @github: <https://github.com/hryvinskyi>
+ * @link http://www.yiiframework.com/
+ * @copyright Copyright (c) 2008 Yii Software LLC
+ * @license http://www.yiiframework.com/license/ (BSD-3-Clause)
+ *
+ * Modified for Magento 2
+ * @copyright Copyright (c) 2019 Volodymyr Hryvinskyi. All rights reserved.
+ * @author Volodymyr Hryvinskyi <mailto:volodymyr@hryvinskyi.com>
+ * @github <https://github.com/hryvinskyi>
  */
 
 namespace Hryvinskyi\Base\Helper;
@@ -81,7 +86,9 @@ class Html
      * In particular, if the value of the `data` attribute is `['name' => 'xyz', 'age' => 13]`, two attributes
      * will be generated instead of one: `data-name="xyz" data-age="13"`.
      */
-    public static $dataAttributes = ['data', 'data-ng', 'ng'];
+    public static $dataAttributes = ['aria', 'data', 'data-ng', 'ng'];
+
+    public static $normalizeClassAttribute = true;
 
     /**
      * Encodes special characters into HTML entities.
@@ -95,7 +102,7 @@ class Html
      */
     public static function encode($content, $doubleEncode = true)
     {
-        return htmlspecialchars($content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
+        return htmlspecialchars((string)$content, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
     }
 
     /**
@@ -134,8 +141,8 @@ class Html
         if ($name === null || $name === false) {
             return $content;
         }
-        $html = "<$name" . static::renderTagAttributes($options) . '>';
-        return isset(static::$voidElements[strtolower($name)]) ? $html : "$html$content</$name>";
+        $html = "<$name" . static::renderTagAttributes($options);
+        return isset(static::$voidElements[strtolower($name)]) ? "$html />" : "$html>$content</$name>";
     }
 
     /**
@@ -154,6 +161,7 @@ class Html
         if ($name === null || $name === false) {
             return '';
         }
+
         return "<$name" . static::renderTagAttributes($options) . '>';
     }
 
@@ -169,6 +177,7 @@ class Html
         if ($name === null || $name === false) {
             return '';
         }
+
         return "</$name>";
     }
 
@@ -229,9 +238,9 @@ class Html
         } elseif (isset($options['noscript']) && $options['noscript'] === true) {
             unset($options['noscript']);
             return '<noscript>' . static::tag('link', '', $options) . '</noscript>';
-        } else {
-            return static::tag('link', '', $options);
         }
+
+        return static::tag('link', '', $options);
     }
 
     /**
@@ -256,9 +265,9 @@ class Html
             $condition = $options['condition'];
             unset($options['condition']);
             return self::wrapIntoCondition(static::tag('script', '', $options), $condition);
-        } else {
-            return static::tag('script', '', $options);
         }
+
+        return static::tag('script', '', $options);
     }
 
     /**
@@ -272,6 +281,7 @@ class Html
         if (strpos($condition, '!IE') !== false) {
             return "<!--[if $condition]><!-->\n" . $content . "\n<!--<![endif]-->";
         }
+
         return "<!--[if $condition]>\n" . $content . "\n<![endif]-->";
     }
 
@@ -399,6 +409,7 @@ class Html
     public static function img($src, $options = [])
     {
         $options['src'] = $src;
+
         if (isset($options['srcset']) && is_array($options['srcset'])) {
             $srcset = [];
             foreach ($options['srcset'] as $descriptor => $url) {
@@ -406,9 +417,11 @@ class Html
             }
             $options['srcset'] = implode(',', $srcset);
         }
+
         if (!isset($options['alt'])) {
             $options['alt'] = '';
         }
+
         return static::tag('img', '', $options);
     }
 
@@ -434,7 +447,7 @@ class Html
     /**
      * Generates a button tag.
      * @param string $content the content enclosed within the button tag. It will NOT be HTML-encoded.
-     * Therefore you can pass in HTML code such as an image tag. If this is is coming from end users,
+     * Therefore, you can pass in HTML code such as an image tag. If this is is coming from end users,
      * you should consider [[encode()]] it to prevent XSS attacks.
      * @param array $options the tag options in terms of name-value pairs. These will be rendered as
      * the attributes of the resulting tag. The values will be HTML-encoded using [[encode()]].
@@ -696,13 +709,20 @@ class Html
      */
     protected static function booleanInput($type, $name, $checked = false, $options = [])
     {
-        $options['checked'] = (bool) $checked;
+        // 'checked' option has priority over $checked argument
+        if (!isset($options['checked'])) {
+            $options['checked'] = (bool) $checked;
+        }
         $value = array_key_exists('value', $options) ? $options['value'] : '1';
         if (isset($options['uncheck'])) {
             // add a hidden field so that if the checkbox is not selected, it still submits a value
             $hiddenOptions = [];
             if (isset($options['form'])) {
                 $hiddenOptions['form'] = $options['form'];
+            }
+            // make sure disabled input is not sending any value
+            if (!empty($options['disabled'])) {
+                $hiddenOptions['disabled'] = $options['disabled'];
             }
             $hidden = static::hiddenInput($name, $options['uncheck'], $hiddenOptions);
             unset($options['uncheck']);
@@ -715,9 +735,9 @@ class Html
             unset($options['label'], $options['labelOptions']);
             $content = static::label(static::input($type, $name, $value, $options) . ' ' . $label, null, $labelOptions);
             return $hidden . $content;
-        } else {
-            return $hidden . static::input($type, $name, $value, $options);
         }
+
+        return $hidden . static::input($type, $name, $value, $options);
     }
 
     /**
@@ -836,7 +856,12 @@ class Html
             if (!empty($name) && substr_compare($name, '[]', -2, 2) === 0) {
                 $name = substr($name, 0, -2);
             }
-            $hidden = static::hiddenInput($name, $options['unselect']);
+            $hiddenOptions = [];
+            // make sure disabled input is not sending any value
+            if (!empty($options['disabled'])) {
+                $hiddenOptions['disabled'] = $options['disabled'];
+            }
+            $hidden = static::hiddenInput($name, $options['unselect'], $hiddenOptions);
             unset($options['unselect']);
         } else {
             $hidden = '';
@@ -884,39 +909,54 @@ class Html
         if (substr($name, -2) !== '[]') {
             $name .= '[]';
         }
+        if (ArrayHelper::isTraversable($selection)) {
+            $selection = array_map('strval', ArrayHelper::toArray($selection));
+        }
+
         $formatter = ArrayHelper::remove($options, 'item');
         $itemOptions = ArrayHelper::remove($options, 'itemOptions', []);
         $encode = ArrayHelper::remove($options, 'encode', true);
         $separator = ArrayHelper::remove($options, 'separator', "\n");
         $tag = ArrayHelper::remove($options, 'tag', 'div');
+        $strict = ArrayHelper::remove($options, 'strict', false);
+
         $lines = [];
         $index = 0;
         foreach ($items as $value => $label) {
             $checked = $selection !== null &&
                 (!ArrayHelper::isTraversable($selection) && !strcmp($value, $selection)
-                    || ArrayHelper::isTraversable($selection) && ArrayHelper::isIn($value, $selection));
+                    || ArrayHelper::isTraversable($selection) && ArrayHelper::isIn((string)$value, $selection, $strict));
             if ($formatter !== null) {
                 $lines[] = call_user_func($formatter, $index, $label, $name, $checked, $value);
             } else {
-                $lines[] = static::checkbox($name, $checked, array_merge($itemOptions, [
+                $lines[] = static::checkbox($name, $checked, array_merge([
                     'value' => $value,
                     'label' => $encode ? static::encode($label) : $label,
-                ]));
+                ], $itemOptions));
             }
             $index++;
         }
+
         if (isset($options['unselect'])) {
             // add a hidden field so that if the list box has no option being selected, it still submits a value
             $name2 = substr($name, -2) === '[]' ? substr($name, 0, -2) : $name;
-            $hidden = static::hiddenInput($name2, $options['unselect']);
-            unset($options['unselect']);
+            $hiddenOptions = [];
+            // make sure disabled input is not sending any value
+            if (!empty($options['disabled'])) {
+                $hiddenOptions['disabled'] = $options['disabled'];
+            }
+            $hidden = static::hiddenInput($name2, $options['unselect'], $hiddenOptions);
+            unset($options['unselect'], $options['disabled']);
         } else {
             $hidden = '';
         }
+
         $visibleContent = implode($separator, $lines);
+
         if ($tag === false) {
             return $hidden . $visibleContent;
         }
+
         return $hidden . static::tag($tag, $visibleContent, $options);
     }
 
@@ -955,34 +995,51 @@ class Html
      */
     public static function radioList($name, $selection = null, $items = [], $options = [])
     {
+        if (ArrayHelper::isTraversable($selection)) {
+            $selection = array_map('strval', ArrayHelper::toArray($selection));
+        }
+
         $formatter = ArrayHelper::remove($options, 'item');
         $itemOptions = ArrayHelper::remove($options, 'itemOptions', []);
         $encode = ArrayHelper::remove($options, 'encode', true);
         $separator = ArrayHelper::remove($options, 'separator', "\n");
         $tag = ArrayHelper::remove($options, 'tag', 'div');
-        // add a hidden field so that if the list box has no option being selected, it still submits a value
-        $hidden = isset($options['unselect']) ? static::hiddenInput($name, $options['unselect']) : '';
-        unset($options['unselect']);
+        $strict = ArrayHelper::remove($options, 'strict', false);
+
+        $hidden = '';
+        if (isset($options['unselect'])) {
+            // add a hidden field so that if the list box has no option being selected, it still submits a value
+            $hiddenOptions = [];
+            // make sure disabled input is not sending any value
+            if (!empty($options['disabled'])) {
+                $hiddenOptions['disabled'] = $options['disabled'];
+            }
+            $hidden =  static::hiddenInput($name, $options['unselect'], $hiddenOptions);
+            unset($options['unselect'], $options['disabled']);
+        }
+
         $lines = [];
         $index = 0;
         foreach ($items as $value => $label) {
             $checked = $selection !== null &&
                 (!ArrayHelper::isTraversable($selection) && !strcmp($value, $selection)
-                    || ArrayHelper::isTraversable($selection) && ArrayHelper::isIn($value, $selection));
+                    || ArrayHelper::isTraversable($selection) && ArrayHelper::isIn((string)$value, $selection, $strict));
             if ($formatter !== null) {
                 $lines[] = call_user_func($formatter, $index, $label, $name, $checked, $value);
             } else {
-                $lines[] = static::radio($name, $checked, array_merge($itemOptions, [
+                $lines[] = static::radio($name, $checked, array_merge([
                     'value' => $value,
                     'label' => $encode ? static::encode($label) : $label,
-                ]));
+                ], $itemOptions));
             }
             $index++;
         }
         $visibleContent = implode($separator, $lines);
+
         if ($tag === false) {
             return $hidden . $visibleContent;
         }
+
         return $hidden . static::tag($tag, $visibleContent, $options);
     }
 
@@ -1018,9 +1075,11 @@ class Html
         $formatter = ArrayHelper::remove($options, 'item');
         $separator = ArrayHelper::remove($options, 'separator', "\n");
         $itemOptions = ArrayHelper::remove($options, 'itemOptions', []);
+
         if (empty($items)) {
             return static::tag($tag, '', $options);
         }
+
         $results = [];
         foreach ($items as $index => $item) {
             if ($formatter !== null) {
@@ -1029,6 +1088,7 @@ class Html
                 $results[] = static::tag('li', $encode ? static::encode($item) : $item, $itemOptions);
             }
         }
+
         return static::tag(
             $tag,
             $separator . implode($separator, $results) . $separator,
@@ -1084,9 +1144,24 @@ class Html
      */
     public static function renderSelectOptions($selection, $items, &$tagOptions = [])
     {
+        if (ArrayHelper::isTraversable($selection)) {
+            $normalizedSelection = [];
+            foreach (ArrayHelper::toArray($selection) as $selectionItem) {
+                if (is_bool($selectionItem)) {
+                    $normalizedSelection[] = $selectionItem ? '1' : '0';
+                } else {
+                    $normalizedSelection[] = (string)$selectionItem;
+                }
+            }
+            $selection = $normalizedSelection;
+        } elseif (is_bool($selection)) {
+            $selection = $selection ? '1' : '0';
+        }
+
         $lines = [];
         $encodeSpaces = ArrayHelper::remove($tagOptions, 'encodeSpaces', false);
         $encode = ArrayHelper::remove($tagOptions, 'encode', true);
+        $strict = ArrayHelper::remove($tagOptions, 'strict', false);
         if (isset($tagOptions['prompt'])) {
             $promptOptions = ['value' => ''];
             if (is_string($tagOptions['prompt'])) {
@@ -1101,27 +1176,40 @@ class Html
             }
             $lines[] = static::tag('option', $promptText, $promptOptions);
         }
+
         $options = isset($tagOptions['options']) ? $tagOptions['options'] : [];
         $groups = isset($tagOptions['groups']) ? $tagOptions['groups'] : [];
         unset($tagOptions['prompt'], $tagOptions['options'], $tagOptions['groups']);
         $options['encodeSpaces'] = ArrayHelper::getValue($options, 'encodeSpaces', $encodeSpaces);
         $options['encode'] = ArrayHelper::getValue($options, 'encode', $encode);
+
         foreach ($items as $key => $value) {
             if (is_array($value)) {
                 $groupAttrs = isset($groups[$key]) ? $groups[$key] : [];
                 if (!isset($groupAttrs['label'])) {
                     $groupAttrs['label'] = $key;
                 }
-                $attrs = ['options' => $options, 'groups' => $groups, 'encodeSpaces' => $encodeSpaces, 'encode' => $encode];
+                $attrs = ['options' => $options, 'groups' => $groups, 'encodeSpaces' => $encodeSpaces, 'encode' => $encode, 'strict' => $strict];
                 $content = static::renderSelectOptions($selection, $value, $attrs);
                 $lines[] = static::tag('optgroup', "\n" . $content . "\n", $groupAttrs);
             } else {
                 $attrs = isset($options[$key]) ? $options[$key] : [];
                 $attrs['value'] = (string) $key;
                 if (!array_key_exists('selected', $attrs)) {
-                    $attrs['selected'] = $selection !== null &&
-                        (!ArrayHelper::isTraversable($selection) && !strcmp($key, $selection)
-                            || ArrayHelper::isTraversable($selection) && ArrayHelper::isIn($key, $selection));
+                    $selected = false;
+                    if ($selection !== null) {
+                        if (ArrayHelper::isTraversable($selection)) {
+                            $selected = ArrayHelper::isIn((string)$key, $selection, $strict);
+                        } elseif ($key === '' || $selection === '') {
+                            $selected = $selection === $key;
+                        } elseif ($strict) {
+                            $selected = !strcmp((string)$key, (string)$selection);
+                        } else {
+                            $selected = $selection == $key;
+                        }
+                    }
+
+                    $attrs['selected'] = $selected;
                 }
                 $text = $encode ? static::encode($value) : $value;
                 if ($encodeSpaces) {
@@ -1130,6 +1218,7 @@ class Html
                 $lines[] = static::tag('option', $text, $attrs);
             }
         }
+
         return implode("\n", $lines);
     }
 
@@ -1177,7 +1266,11 @@ class Html
                     foreach ($value as $n => $v) {
                         if (is_array($v)) {
                             $html .= " $name-$n='" . Json::htmlEncode($v) . "'";
-                        } else {
+                        } elseif (is_bool($v)) {
+                            if ($v) {
+                                $html .= " $name-$n";
+                            }
+                        } elseif ($v !== null) {
                             $html .= " $name-$n=\"" . static::encode($v) . '"';
                         }
                     }
@@ -1185,7 +1278,12 @@ class Html
                     if (empty($value)) {
                         continue;
                     }
-                    $html .= " $name=\"" . static::encode(implode(' ', $value)) . '"';
+                    if (static::$normalizeClassAttribute === true && count($value) > 1) {
+                        // removes duplicate classes
+                        $value = explode(' ', implode(' ', $value));
+                        $value = array_unique($value);
+                    }
+                    $html .= " $name=\"" . static::encode(implode(' ', array_filter($value))) . '"';
                 } elseif ($name === 'style') {
                     if (empty($value)) {
                         continue;
@@ -1196,8 +1294,11 @@ class Html
                 }
             } elseif ($value !== null) {
                 $html .= " $name=\"" . static::encode($value) . '"';
+            } elseif (!empty($key)) {
+                $html .= " $name";
             }
         }
+
         return $html;
     }
 
@@ -1246,13 +1347,15 @@ class Html
                 $existingClasses[$key] = $class;
             }
         }
-        return array_unique($existingClasses);
+
+        return static::$normalizeClassAttribute ? array_unique($existingClasses) : $existingClasses;
     }
 
     /**
      * Removes a CSS class from the specified options.
      * @param array $options the options to be modified.
      * @param string|array $class the CSS class(es) to be removed
+     * @see addCssClass()
      */
     public static function removeCssClass(&$options, $class)
     {
@@ -1389,6 +1492,7 @@ class Html
                 $result[trim($property[0])] = trim($property[1]);
             }
         }
+
         return $result;
     }
 
@@ -1419,6 +1523,21 @@ class Html
     }
 
     /**
+     * Converts input name to ID.
+     *
+     * For example, if `$name` is `Post[content]`, this method will return `post-content`.
+     *
+     * @param string $name the input name
+     * @return string the generated input ID
+     * @since 2.0.43
+     */
+    public static function getInputIdByName($name)
+    {
+        $name = mb_strtolower($name, 'UTF-8');
+        return str_replace(['[]', '][', '[', ']', ' ', '.', '--'], ['', '-', '-', '', '-', '-', '-'], $name);
+    }
+
+    /**
      * Escapes regular expression to use in JavaScript
      * @param string $regexp the regular expression to be escaped.
      * @return string the escaped result.
@@ -1436,7 +1555,7 @@ class Html
             $pattern = substr($pattern, 0, $pos + 1);
         }
         if (!empty($flag)) {
-            $pattern .= preg_replace('/[^igm]/', '', $flag);
+            $pattern .= preg_replace('/[^igmu]/', '', $flag);
         }
         return $pattern;
     }

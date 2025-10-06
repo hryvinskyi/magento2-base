@@ -13,8 +13,14 @@
     <type name="Magento\Framework\View\TemplateEngineFactory">
         <plugin name="Hryvinskyi_Base::debug_hints" type="Hryvinskyi\Base\Plugin\DebugHints" sortOrder="10"/>
     </type>
-
     <type name="Magento\Framework\View\TemplateEngine\Php">
-        <plugin name="Hryvinskyi_Base::add_view_models_registry_variable" type="Hryvinskyi\Base\Plugin\AddViewModelsRegistryVariable"/>
+        <arguments>
+            <argument name="blockVariables" xsi:type="array">
+                <item name="viewModels" xsi:type="object">Hryvinskyi\Base\Model\ViewModelRegistry\Proxy</item>
+                <item name="secureRenderer" xsi:type="object">Magento\Framework\View\Helper\SecureHtmlRenderer\Proxy</item>
+                <item name="escaper" xsi:type="object">Magento\Framework\Escaper\Proxy</item>
+                <item name="localeFormatter" xsi:type="object">Magento\Framework\Locale\LocaleFormatter\Proxy</item>
+            </argument>
+        </arguments>
     </type>
 </config>
