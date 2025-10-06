@@ -7,6 +7,8 @@
 
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Magento\Framework\View\Helper\SecureHtmlRender\HtmlRenderer"
+                type="Hryvinskyi\Base\View\Helper\SecureHtmlRender\HtmlRenderer"/>
     <type name="Magento\Framework\View\Layout">
         <plugin name="Hryvinskyi_Base::plugin_layout" type="Hryvinskyi\Base\Plugin\Layout" sortOrder="10"/>
     </type>

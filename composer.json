@@ -6,7 +6,7 @@
         "magento/framework": "*"
     },
     "type": "magento2-module",
-    "version": "2.1.4",
+    "version": "2.1.5",
     "license": "MIT",
     "autoload": {
         "files": [ "registration.php" ],
