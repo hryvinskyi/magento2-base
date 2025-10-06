@@ -34,13 +34,6 @@ bin/magento setup:upgrade
 
 Access any view model directly in templates without declaring them in layout XML. The `$viewModels` variable is automatically available in all `.phtml` templates.
 
-**Benefits:**
-- ✅ No layout XML required for view model injection
-- ✅ Automatic cache tag collection for FPC/Varnish
-- ✅ ESI block support with proper cache invalidation
-- ✅ Type-safe with PHPStan support
-- ✅ Uses ObjectManager's instance cache (no duplication)
-
 **Usage in templates:**
 ```php
 <?php
