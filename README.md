@@ -19,6 +19,7 @@ bin/magento setup:upgrade
 1. [Core Features](#core-features)
    - [ViewModel Registry](#1-viewmodel-registry-viewmodels)
    - [Layout Debugging](#2-layout-debugging-developer-mode-only)
+   - [Extensible Admin Menu](#3-extensible-admin-menu)
 2. [Yii2 Framework Helpers](#yii2-framework-helper-classes)
    - [ArrayHelper](#arrayhelper)
    - [Html](#html)
@@ -94,6 +95,132 @@ The debugging information is controlled by `Hryvinskyi\Base\Helper\Config`:
 - Block class names and cache keys
 - Layout handle processing order
 - Visual hierarchy with indentation
+
+### 3. Extensible Admin Menu
+
+A reusable dropdown menu component for Magento admin pages that can be configured entirely via layout XML. Perfect for creating navigation menus in custom admin modules.
+
+**Features:**
+- Fully configurable via layout XML (no PHP code required)
+- Route-based URL generation with parameters support
+- Sortable menu items with sort_order
+- Custom CSS classes and icons per item
+- Translatable labels
+- Reusable across multiple modules
+
+**Basic Usage in Layout XML:**
+
+```xml
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <css src="Hryvinskyi_Base::css/styles.css"/>
+    </head>
+    <body>
+        <referenceBlock name="page.title">
+            <block class="Hryvinskyi\Base\Block\Adminhtml\Menu" name="my.module.menu">
+                <arguments>
+                    <argument name="menu_title" xsi:type="string" translate="true">My Module</argument>
+                    <argument name="items" xsi:type="array">
+                        <item name="dashboard" xsi:type="array">
+                            <item name="label" xsi:type="string" translate="true">Dashboard</item>
+                            <item name="route" xsi:type="string">mymodule/dashboard/index</item>
+                            <item name="sort_order" xsi:type="number">10</item>
+                        </item>
+                        <item name="settings" xsi:type="array">
+                            <item name="label" xsi:type="string" translate="true">Settings</item>
+                            <item name="route" xsi:type="string">adminhtml/system_config/edit</item>
+                            <item name="route_params" xsi:type="array">
+                                <item name="section" xsi:type="string">mymodule</item>
+                            </item>
+                            <item name="sort_order" xsi:type="number">20</item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+        </referenceBlock>
+    </body>
+</page>
+```
+
+**Creating a Reusable Menu Handle:**
+
+Create a shared layout handle file (e.g., `mymodule_menu.xml`) to avoid duplication:
+
+```xml
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <css src="Hryvinskyi_Base::css/styles.css"/>
+    </head>
+    <body>
+        <referenceBlock name="page.title">
+            <block class="Hryvinskyi\Base\Block\Adminhtml\Menu" name="mymodule.menu">
+                <arguments>
+                    <argument name="menu_title" xsi:type="string" translate="true">My Module</argument>
+                    <argument name="items" xsi:type="array">
+                        <!-- Define your menu items here -->
+                    </argument>
+                </arguments>
+            </block>
+        </referenceBlock>
+    </body>
+</page>
+```
+
+Then include it in your page layouts:
+
+```xml
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="mymodule_menu"/>
+    <body>
+        <referenceContainer name="content">
+            <uiComponent name="mymodule_listing"/>
+        </referenceContainer>
+    </body>
+</page>
+```
+
+**Menu Item Configuration Options:**
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `label` | string | Yes | Menu item text (supports translation with `translate="true"`) |
+| `route` | string | Yes | Magento route path (e.g., `module/controller/action`) |
+| `route_params` | array | No | Route parameters (e.g., `section`, `id`) |
+| `sort_order` | number | No | Order of items (default: 0, lower = first) |
+| `class` | string | No | CSS class(es) for the menu item |
+| `icon` | string | No | SVG or HTML icon content |
+| `is_active` | boolean | No | Show/hide item (default: true) |
+
+**Custom Menu Icon:**
+
+```xml
+<argument name="menu_icon" xsi:type="string"><![CDATA[
+    <svg class="hamburger-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+    </svg>
+]]></argument>
+```
+
+**Menu Item with Icon:**
+
+```xml
+<item name="reports" xsi:type="array">
+    <item name="label" xsi:type="string" translate="true">Reports</item>
+    <item name="route" xsi:type="string">mymodule/reports/index</item>
+    <item name="sort_order" xsi:type="number">30</item>
+    <item name="icon" xsi:type="string"><![CDATA[
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+            <path d="M3 3v18h18v-18h-18zm16 16h-14v-14h14v14z"/>
+        </svg>
+    ]]></item>
+</item>
+```
 
 ## Yii2 Framework Helper Classes
 
