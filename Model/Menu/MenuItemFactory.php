@@ -38,7 +38,7 @@ class MenuItemFactory implements MenuItemFactoryInterface
             routeParams: $data['route_params'] ?? [],
             sortOrder: (int) ($data['sort_order'] ?? 0),
             isActive: (bool) ($data['is_active'] ?? true),
-            class: $this->buildClassString($data['class'] ?? ''),
+            cssClass: $this->buildClassString($data['class'] ?? ''),
             icon: $data['icon'] ?? ''
         );
     }

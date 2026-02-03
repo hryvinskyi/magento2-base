@@ -29,7 +29,7 @@ class MenuItem implements MenuItemInterface
      * @param array<string, mixed> $routeParams
      * @param int $sortOrder
      * @param bool $isActive
-     * @param string $class
+     * @param string $cssClass
      * @param string $icon
      */
     public function __construct(
@@ -39,7 +39,7 @@ class MenuItem implements MenuItemInterface
         private readonly array $routeParams = [],
         private readonly int $sortOrder = 0,
         private readonly bool $isActive = true,
-        private readonly string $class = '',
+        private readonly string $cssClass = '',
         private readonly string $icon = ''
     ) {
     }
@@ -85,7 +85,7 @@ class MenuItem implements MenuItemInterface
      */
     public function getClass(): string
     {
-        return $this->class;
+        return $this->cssClass;
     }
 
     /**
