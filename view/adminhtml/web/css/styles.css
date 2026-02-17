@@ -32,48 +32,74 @@
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    background: #fff;
-    border: 1px solid #adadad;
-    border-radius: 3px;
-    font-size: 14px;
-    color: #333;
+    gap: 8px;
+    padding: 0 16px;
+    height: 36px;
+    background: #ffffff;
+    border: 1px solid #e3e3e3;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #4a3f39;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     outline: none;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.hryvinskyi-core-menu .admin__action-dropdown:hover {
-    background-color: #f8f8f8;
-    border-color: #007bdb;
-    box-shadow: 0 1px 4px rgba(0, 123, 219, 0.2);
+    line-height: 1;
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown-text {
-    margin-left: 10px;
-    font-weight: 600;
+    font-weight: 500;
+    margin-right: 15px;
+}
+
+.hryvinskyi-core-menu .admin__action-dropdown-text:after {
+    display: none;
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown-menu {
     right: auto;
     left: 0;
-    top: 100%;
+    top: calc(100% + 4px);
     z-index: 100000;
-    padding: 8px 0;
+    padding: 4px;
     list-style: none;
-    background-color: #fff;
-    border: 1px solid #007bdb;
-    border-radius: 3px;
-    box-shadow: 0 1px 4px rgba(0, 123, 219, 0.2);
-    transition: all 0.3s ease;
+    background: #ffffff;
+    border: 1px solid #e3e3e3;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(74, 63, 57, 0.12), 0 2px 6px rgba(74, 63, 57, 0.06);
+    transition: all 0.15s ease;
+    min-width: 200px;
+    animation: hryMenuFadeIn 0.12s ease-out;
 }
 
+@keyframes hryMenuFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.hryvinskyi-core-menu .admin__action-dropdown:hover,
+.hryvinskyi-core-menu .admin__action-dropdown.active {
+    background: #f5f5f5;
+    border-color: #ccc;
+    color: #4a3f39;
+    box-shadow: none;
+}
+
+.hryvinskyi-core-menu .admin__action-dropdown:active,
+.hryvinskyi-core-menu .admin__action-dropdown.active {
+    transform: scale(0.99);
+}
+
+.hryvinskyi-core-menu .admin__action-dropdown.active .admin__action-dropdown-menu,
 .hryvinskyi-core-menu .admin__action-dropdown._active .admin__action-dropdown-menu {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+}
+
+.hryvinskyi-core-menu.admin__action-dropdown-wrap.active .admin__action-dropdown,
+.hryvinskyi-core-menu.admin__action-dropdown-wrap._active .admin__action-dropdown {
+    border: 1px solid #e3e3e3!important;
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown-menu li {
@@ -84,22 +110,25 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 18px;
-    color: #333;
+    padding: 9px 12px;
+    color: #4a3f39;
+    font-size: 13px;
+    font-weight: 450;
     text-decoration: none;
-    transition: background-color 0.2s ease;
+    border-radius: 7px;
+    transition: background 0.12s ease;
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown-menu li a .menu-item-icon {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
-    color: #666;
-    transition: color 0.2s ease;
+    color: #666666;
+    transition: color 0.12s ease;
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown-menu li a:hover .menu-item-icon {
-    color: #007bdb;
+    color: #4a3f39;
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown-menu li.current a .menu-item-icon {
@@ -107,29 +136,31 @@
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown-menu li a:hover {
-    background-color: #f5f5f5;
-    color: #007bdb;
+    background: #f5f5f5;
+    color: #4a3f39;
+    text-decoration: none;
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown-menu li.current a {
-    background-color: #f5f5f5;
+    background: #fef0ea;
     color: #eb5202;
     font-weight: 600;
-    border-left: 3px solid #eb5202;
-    padding-left: 15px;
+    border-left: none;
+    padding-left: 12px;
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown-menu li.current a:hover {
-    background-color: #eee;
+    background: #fde5d9;
     color: #eb5202;
 }
 
 .hryvinskyi-core-menu .hamburger-icon {
-    width: 16px;
-    height: 16px;
-    fill: #514943;
+    width: 15px;
+    height: 15px;
+    fill: #4a3f39;
+    flex-shrink: 0;
 }
 
 .hryvinskyi-core-menu .admin__action-dropdown:hover .hamburger-icon {
-    fill: #007bdb;
+    fill: #4a3f39;
 }
