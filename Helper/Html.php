@@ -1294,7 +1294,7 @@ class Html
                 }
             } elseif ($value !== null) {
                 $html .= " $name=\"" . static::encode($value) . '"';
-            } elseif (!empty($key)) {
+            } elseif (!empty($name)) {
                 $html .= " $name";
             }
         }
