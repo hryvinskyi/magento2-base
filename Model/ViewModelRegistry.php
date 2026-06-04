@@ -57,7 +57,7 @@ class ViewModelRegistry
      * @throws LocalizedException If class not found or not a view model
      * @phpstan-return T
      */
-    public function require(string $viewModelClass, AbstractBlock $block = null): ArgumentInterface
+    public function require(string $viewModelClass, ?AbstractBlock $block = null): ArgumentInterface
     {
         try {
             $object = $this->objectManager->get($viewModelClass);
