@@ -12,6 +12,7 @@ namespace Hryvinskyi\Base\Observer;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\View\LayoutInterface;
 
 /**
  * Adds a section-specific layout handle to the system configuration page.
@@ -39,18 +40,19 @@ class AddMenuHandleToConfigPage implements ObserverInterface
      */
     public function execute(Observer $observer): void
     {
-        if ($observer->getEvent()->getFullActionName() !== self::ACTION_NAME) {
+        $event = $observer->getEvent();
+
+        if ($event->getData('full_action_name') !== self::ACTION_NAME) {
             return;
         }
 
         $section = $this->request->getParam('section');
+        $layout = $event->getData('layout');
 
-        if ($section === null || $section === '') {
+        if (!is_string($section) || $section === '' || !$layout instanceof LayoutInterface) {
             return;
         }
 
-        $observer->getEvent()->getLayout()->getUpdate()->addHandle(
-            self::HANDLE_PREFIX . $section
-        );
+        $layout->getUpdate()->addHandle(self::HANDLE_PREFIX . $section);
     }
 }

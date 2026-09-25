@@ -26,11 +26,12 @@ class MenuItem implements MenuItemInterface
      * @param UrlInterface $urlBuilder
      * @param string $label
      * @param string $route
-     * @param array<string, mixed> $routeParams
+     * @param array<string,mixed> $routeParams
      * @param int $sortOrder
      * @param bool $isActive
      * @param string $cssClass
      * @param string $icon
+     * @param string|null $resource ACL resource id required to see the item; null means no check
      */
     public function __construct(
         private readonly UrlInterface $urlBuilder,
@@ -40,7 +41,8 @@ class MenuItem implements MenuItemInterface
         private readonly int $sortOrder = 0,
         private readonly bool $isActive = true,
         private readonly string $cssClass = '',
-        private readonly string $icon = ''
+        private readonly string $icon = '',
+        private readonly ?string $resource = null
     ) {
     }
 
@@ -94,5 +96,13 @@ class MenuItem implements MenuItemInterface
     public function getIcon(): string
     {
         return $this->icon;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getResource(): ?string
+    {
+        return $this->resource;
     }
 }

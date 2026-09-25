@@ -16,6 +16,10 @@ use Magento\Backend\Block\Template\Context;
 
 /**
  * Extensible admin menu block with layout XML configuration support
+ *
+ * Items come from the "items" layout argument. An item whose "resource" names an ACL resource the current
+ * admin user is not allowed is left out; an item without "resource" is always listed. A malformed item is
+ * logged and left out instead of breaking the page.
  */
 class Menu extends Template
 {
@@ -34,14 +38,14 @@ class Menu extends Template
     protected $_template = 'Hryvinskyi_Base::menu.phtml';
 
     /**
-     * @var MenuItemInterface[]|null
+     * @var list<MenuItemInterface>|null
      */
     private ?array $sortedItems = null;
 
     /**
      * @param Context $context
      * @param MenuItemFactoryInterface $menuItemFactory
-     * @param array<string, mixed> $data
+     * @param array<string,mixed> $data
      */
     public function __construct(
         Context $context,
@@ -58,7 +62,7 @@ class Menu extends Template
      */
     public function getMenuTitle(): string
     {
-        return (string) $this->getData('menu_title');
+        return $this->readText('menu_title');
     }
 
     /**
@@ -68,15 +72,15 @@ class Menu extends Template
      */
     public function getMenuIcon(): string
     {
-        $icon = $this->getData('menu_icon');
+        $icon = $this->readText('menu_icon');
 
-        return $icon !== null && $icon !== '' ? (string) $icon : self::DEFAULT_ICON;
+        return $icon !== '' ? $icon : self::DEFAULT_ICON;
     }
 
     /**
-     * Get menu items sorted by sort order
+     * Get the menu items the current admin user may see, sorted by sort order
      *
-     * @return MenuItemInterface[]
+     * @return list<MenuItemInterface>
      */
     public function getMenuItems(): array
     {
@@ -84,33 +88,17 @@ class Menu extends Template
             return $this->sortedItems;
         }
 
-        $itemsConfig = $this->getData('items') ?? [];
         $items = [];
-
-        foreach ($itemsConfig as $itemData) {
-            if (is_array($itemData)) {
-                $items[] = $this->menuItemFactory->create($itemData);
+        foreach ($this->readItemsConfig() as $name => $itemData) {
+            $item = $this->createItem((string) $name, $itemData);
+            if ($item !== null && $this->isAllowed($item)) {
+                $items[] = $item;
             }
         }
 
         $this->sortedItems = $this->sortItems($items);
 
         return $this->sortedItems;
-    }
-
-    /**
-     * Sort menu items by sort order
-     *
-     * @param MenuItemInterface[] $items
-     * @return MenuItemInterface[]
-     */
-    private function sortItems(array $items): array
-    {
-        usort($items, static function (MenuItemInterface $a, MenuItemInterface $b): int {
-            return $a->getSortOrder() <=> $b->getSortOrder();
-        });
-
-        return $items;
     }
 
     /**
@@ -121,5 +109,119 @@ class Menu extends Template
     public function hasItems(): bool
     {
         return count($this->getMenuItems()) > 0;
+    }
+
+    /**
+     * Read a text layout argument; anything that is not text reads as an empty string
+     *
+     * @param string $key
+     * @return string
+     */
+    private function readText(string $key): string
+    {
+        $value = $this->getData($key);
+
+        if (is_string($value)) {
+            return $value;
+        }
+
+        return $value instanceof \Stringable ? (string) $value : '';
+    }
+
+    /**
+     * Read the "items" layout argument
+     *
+     * @return array<mixed>
+     */
+    private function readItemsConfig(): array
+    {
+        $itemsConfig = $this->getData('items');
+
+        if ($itemsConfig === null) {
+            return [];
+        }
+
+        if (!is_array($itemsConfig)) {
+            $this->_logger->warning(
+                'Admin menu block ignores its "items" argument: an array is expected.',
+                ['block' => $this->getNameInLayout(), 'given' => get_debug_type($itemsConfig)]
+            );
+
+            return [];
+        }
+
+        return $itemsConfig;
+    }
+
+    /**
+     * Build one menu item, or log and return null when its configuration is malformed
+     *
+     * @param string $name
+     * @param mixed $itemData
+     * @return MenuItemInterface|null
+     */
+    private function createItem(string $name, mixed $itemData): ?MenuItemInterface
+    {
+        if (!is_array($itemData)) {
+            $this->logSkippedItem($name, 'the item configuration must be an array');
+
+            return null;
+        }
+
+        $data = [];
+        foreach ($itemData as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+
+        try {
+            return $this->menuItemFactory->create($data);
+        } catch (\InvalidArgumentException $exception) {
+            $this->logSkippedItem($name, $exception->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * Check whether the current admin user may see the item
+     *
+     * @param MenuItemInterface $item
+     * @return bool
+     */
+    private function isAllowed(MenuItemInterface $item): bool
+    {
+        $resource = $item->getResource();
+
+        return $resource === null || $this->getAuthorization()->isAllowed($resource);
+    }
+
+    /**
+     * Log a menu item left out because of its configuration
+     *
+     * @param string $name
+     * @param string $reason
+     * @return void
+     */
+    private function logSkippedItem(string $name, string $reason): void
+    {
+        $this->_logger->warning(
+            'Admin menu item skipped: ' . $reason,
+            ['block' => $this->getNameInLayout(), 'item' => $name]
+        );
+    }
+
+    /**
+     * Sort menu items by sort order; items with the same sort order keep their configured order
+     *
+     * @param list<MenuItemInterface> $items
+     * @return list<MenuItemInterface>
+     */
+    private function sortItems(array $items): array
+    {
+        usort($items, static function (MenuItemInterface $a, MenuItemInterface $b): int {
+            return $a->getSortOrder() <=> $b->getSortOrder();
+        });
+
+        return $items;
     }
 }

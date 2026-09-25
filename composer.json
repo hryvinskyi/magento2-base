@@ -2,11 +2,12 @@
     "name": "hryvinskyi/magento2-base",
     "description": "N/A",
     "require": {
-        "php": ">=8.0",
-        "magento/framework": "*"
+        "php": ">=8.1",
+        "magento/framework": "^103.0",
+        "magento/module-backend": "^102.0"
     },
     "type": "magento2-module",
-    "version": "2.1.12",
+    "version": "2.2.0",
     "license": "MIT",
     "autoload": {
         "files": [ "registration.php" ],

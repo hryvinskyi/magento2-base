@@ -21,8 +21,8 @@ $style = '.page-title-wrapper .page-title {
     display: none;
 }';
 
-echo $secureRenderer->renderTag('style', [], $style, false);
 ?>
+<?= /* @noEscape */ $secureRenderer->renderTag('style', [], $style, false) ?>
 <div class="admin__action-dropdown-wrap hryvinskyi-core-menu">
     <button
         type="button"

@@ -105,6 +105,7 @@ A reusable dropdown menu component for Magento admin pages that can be configure
 - Route-based URL generation with parameters support
 - Sortable menu items with sort_order
 - Custom CSS classes and icons per item
+- Per-item ACL resource: items the current admin user may not open are hidden
 - Translatable labels
 - Reusable across multiple modules
 
@@ -193,9 +194,36 @@ Then include it in your page layouts:
 | `route` | string | Yes | Magento route path (e.g., `module/controller/action`) |
 | `route_params` | array | No | Route parameters (e.g., `section`, `id`) |
 | `sort_order` | number | No | Order of items (default: 0, lower = first) |
-| `class` | string | No | CSS class(es) for the menu item |
+| `class` | string or array | No | CSS class(es) for the menu item, or a map of class name to boolean flag |
 | `icon` | string | No | SVG or HTML icon content |
 | `is_active` | boolean | No | Show/hide item (default: true) |
+| `resource` | string | No | ACL resource id the admin user needs to see the item (since 2.2.0) |
+
+An item that holds a value of the wrong type (for example an array as `label`, or an empty `resource`) is left out
+of the menu and logged as a warning; the rest of the menu still renders.
+
+**Per-item Permissions (`resource`):**
+
+Give an item the ACL resource that guards the page it links to. The menu checks it with
+`Magento\Framework\AuthorizationInterface::isAllowed()` and does not render the item for an admin role that lacks
+it, so a restricted user never sees a link that ends on "Sorry, you need permissions to view this content".
+Items without `resource` are shown to everyone who can open the page, exactly as in 2.1. When no item is left, the
+menu renders nothing.
+
+```xml
+<item name="settings" xsi:type="array">
+    <item name="label" xsi:type="string" translate="true">Settings</item>
+    <item name="route" xsi:type="string">adminhtml/system_config/edit</item>
+    <item name="route_params" xsi:type="array">
+        <item name="section" xsi:type="string">mymodule</item>
+    </item>
+    <item name="resource" xsi:type="string">Vendor_MyModule::config</item>
+    <item name="sort_order" xsi:type="number">20</item>
+</item>
+```
+
+The per-item check hides links; it does not protect the pages. Each controller still declares its own
+`ADMIN_RESOURCE`.
 
 **Custom Menu Icon:**
 

@@ -10,7 +10,9 @@ declare(strict_types=1);
 namespace Hryvinskyi\Base\Api\Menu;
 
 /**
- * Interface for menu items
+ * One entry of the in-page admin menu rendered by the Base menu block
+ *
+ * @api
  */
 interface MenuItemInterface
 {
@@ -55,4 +57,14 @@ interface MenuItemInterface
      * @return string
      */
     public function getIcon(): string;
+
+    /**
+     * Get the ACL resource id the current admin user needs to see this item
+     *
+     * Null means the item carries no permission check of its own and is shown to every admin user
+     * who can open the page that renders the menu.
+     *
+     * @return string|null
+     */
+    public function getResource(): ?string;
 }
