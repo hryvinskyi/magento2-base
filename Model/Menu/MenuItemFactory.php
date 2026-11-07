@@ -11,21 +11,22 @@ namespace Hryvinskyi\Base\Model\Menu;
 
 use Hryvinskyi\Base\Api\Menu\MenuItemFactoryInterface;
 use Hryvinskyi\Base\Api\Menu\MenuItemInterface;
-use Magento\Backend\Model\UrlInterface;
 
 /**
- * Factory for creating menu items from array configuration
+ * Reads a menu item from layout configuration and creates it through the generated item factory
  *
- * Every known key is read with its type checked: a missing key takes its default, a key holding a value of
- * the wrong type makes the whole item invalid, so a typo in layout XML never renders a half-built item.
+ * Every known key is read with its type checked before anything is created: a missing key takes its default, a
+ * key holding a value of the wrong type makes the whole item invalid, so a typo in layout XML never renders a
+ * half-built item. Only scalar values pass through the generated factory; the route parameters reach the item
+ * afterwards (see RoutedMenuItemInterface for why).
  */
 class MenuItemFactory implements MenuItemFactoryInterface
 {
     /**
-     * @param UrlInterface $urlBuilder
+     * @param RoutedMenuItemInterfaceFactory $itemFactory
      */
     public function __construct(
-        private readonly UrlInterface $urlBuilder
+        private readonly RoutedMenuItemInterfaceFactory $itemFactory
     ) {
     }
 
@@ -34,17 +35,19 @@ class MenuItemFactory implements MenuItemFactoryInterface
      */
     public function create(array $data): MenuItemInterface
     {
-        return new MenuItem(
-            urlBuilder: $this->urlBuilder,
-            label: $this->readString($data, 'label'),
-            route: $this->readString($data, 'route'),
-            routeParams: $this->readRouteParams($data),
-            sortOrder: $this->readSortOrder($data),
-            isActive: $this->readFlag($data, 'is_active', true),
-            cssClass: $this->readClass($data),
-            icon: $this->readString($data, 'icon'),
-            resource: $this->readResource($data)
-        );
+        $values = [
+            'label' => $this->readString($data, 'label'),
+            'route' => $this->readString($data, 'route'),
+            'sortOrder' => $this->readSortOrder($data),
+            'isActive' => $this->readFlag($data, 'is_active', true),
+            'cssClass' => $this->readClass($data),
+            'icon' => $this->readString($data, 'icon'),
+            'resource' => $this->readResource($data),
+            'group' => $this->readGroup($data),
+        ];
+        $routeParams = $this->readRouteParams($data);
+
+        return $this->itemFactory->create($values)->withRouteParams($routeParams);
     }
 
     /**
@@ -67,7 +70,7 @@ class MenuItemFactory implements MenuItemFactoryInterface
             return (string) $value;
         }
 
-        throw $this->invalid($key, 'a string', $value);
+        $this->invalid($key, 'a string', $value);
     }
 
     /**
@@ -82,7 +85,7 @@ class MenuItemFactory implements MenuItemFactoryInterface
         $value = $data['route_params'] ?? [];
 
         if (!is_array($value)) {
-            throw $this->invalid('route_params', 'an array', $value);
+            $this->invalid('route_params', 'an array', $value);
         }
 
         $params = [];
@@ -117,7 +120,7 @@ class MenuItemFactory implements MenuItemFactoryInterface
             return (int) $value;
         }
 
-        throw $this->invalid('sort_order', 'a number', $value);
+        $this->invalid('sort_order', 'a number', $value);
     }
 
     /**
@@ -135,7 +138,7 @@ class MenuItemFactory implements MenuItemFactoryInterface
         $flag = $this->toFlag($value);
 
         if ($flag === null) {
-            throw $this->invalid($key, 'a boolean', $value);
+            $this->invalid($key, 'a boolean', $value);
         }
 
         return $flag;
@@ -157,7 +160,7 @@ class MenuItemFactory implements MenuItemFactoryInterface
         }
 
         if (!is_array($value)) {
-            throw $this->invalid('class', 'a string or a map of class name to flag', $value);
+            $this->invalid('class', 'a string or a map of class name to flag', $value);
         }
 
         $enabledClasses = [];
@@ -192,7 +195,25 @@ class MenuItemFactory implements MenuItemFactoryInterface
         }
 
         if (!is_string($value) || trim($value) === '') {
-            throw $this->invalid('resource', 'a non-empty ACL resource id', $value);
+            $this->invalid('resource', 'a non-empty ACL resource id', $value);
+        }
+
+        return trim($value);
+    }
+
+    /**
+     * Read the code of the item's group; absent, null or empty means the item names no group
+     *
+     * @param array<string,mixed> $data
+     * @return string
+     * @throws \InvalidArgumentException
+     */
+    private function readGroup(array $data): string
+    {
+        $value = $data['group'] ?? '';
+
+        if (!is_string($value)) {
+            $this->invalid('group', 'a group code', $value);
         }
 
         return trim($value);
@@ -218,16 +239,17 @@ class MenuItemFactory implements MenuItemFactoryInterface
     }
 
     /**
-     * Build the exception for a key holding a value of the wrong type
+     * Reject a key holding a value of the wrong type
      *
      * @param string $key
      * @param string $expected
      * @param mixed $value
-     * @return \InvalidArgumentException
+     * @return never
+     * @throws \InvalidArgumentException
      */
-    private function invalid(string $key, string $expected, mixed $value): \InvalidArgumentException
+    private function invalid(string $key, string $expected, mixed $value): never
     {
-        return new \InvalidArgumentException(
+        throw new \InvalidArgumentException(
             sprintf('Menu item key "%s" must be %s, %s given.', $key, $expected, get_debug_type($value))
         );
     }

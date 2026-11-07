@@ -287,20 +287,14 @@ class Html
 
     /**
      * Generates a form start tag.
-     * @param array|string $action the form action URL. This parameter will be processed by [[Url::to()]].
-     * @param string $method the form submission method, such as "post", "get", "put", "delete" (case-insensitive).
-     * Since most browsers only support "post" and "get", if other methods are given, they will
-     * be simulated using "post", and a hidden input will be added which contains the actual method type.
-     * See [[\yii\web\Request::methodParam]] for more details.
-     * @param string|null $formKey
+     * @param string $action the form action URL, printed as given. For the "get" method its query parameters
+     * become hidden inputs, because a browser drops the query string of a GET form's action.
+     * @param string $method the form submission method, printed as given.
+     * @param string|null $formKey the Magento form key; when given, a hidden "form_key" input carries it.
      * @param array $options the tag options in terms of name-value pairs. These will be rendered as
      * the attributes of the resulting tag. The values will be HTML-encoded using [[encode()]].
      * If a value is null, the corresponding attribute will not be rendered.
      * See [[renderTagAttributes()]] for details on how attributes are being rendered.
-     *
-     * Special options:
-     *
-     *  - `csrf`: whether to generate the CSRF hidden input. Defaults to true.
      *
      * @return string the generated form start tag.
      * @see endForm()
@@ -350,17 +344,8 @@ class Html
      * @param string $text link body. It will NOT be HTML-encoded. Therefore you can pass in HTML code
      * such as an image tag. If this is coming from end users, you should consider [[encode()]]
      * it to prevent XSS attacks.
-     * @param array|string|null $url the URL for the hyperlink tag. This parameter will be processed by [[Url::to()]]
-     * and will be used for the "href" attribute of the tag. If this parameter is null, the "href" attribute
-     * will not be generated.
-     *
-     * If you want to use an absolute url you can call [[Url::to()]] yourself, before passing the URL to this method,
-     * like this:
-     *
-     * ```php
-     * Html::a('link text', Url::to($url, true))
-     * ```
-     *
+     * @param string|null $url the URL for the "href" attribute, printed as given (HTML-encoded). If it is null,
+     * the "href" attribute is not generated.
      * @param array $options the tag options in terms of name-value pairs. These will be rendered as
      * the attributes of the resulting tag. The values will be HTML-encoded using [[encode()]].
      * If a value is null, the corresponding attribute will not be rendered.
@@ -1294,8 +1279,6 @@ class Html
                 }
             } elseif ($value !== null) {
                 $html .= " $name=\"" . static::encode($value) . '"';
-            } elseif (!empty($name)) {
-                $html .= " $name";
             }
         }
 

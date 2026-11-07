@@ -90,13 +90,6 @@
     transform: scale(0.99);
 }
 
-.hryvinskyi-core-menu .admin__action-dropdown.active .admin__action-dropdown-menu,
-.hryvinskyi-core-menu .admin__action-dropdown._active .admin__action-dropdown-menu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
 .hryvinskyi-core-menu.admin__action-dropdown-wrap.active .admin__action-dropdown,
 .hryvinskyi-core-menu.admin__action-dropdown-wrap._active .admin__action-dropdown {
     border: 1px solid #e3e3e3!important;
@@ -163,4 +156,77 @@
 
 .hryvinskyi-core-menu .admin__action-dropdown:hover .hamburger-icon {
     fill: #4a3f39;
+}
+
+/*
+ * Grouped menu: groups side by side, each with its heading and its columns. Every rule below hangs off the
+ * grouped modifier, so a menu without groups keeps its single-list look.
+ *
+ * The dropdown wrap is only as wide as the toggle button and the menu is positioned inside it, so the menu
+ * sizes to its content and is clamped to the room right of the admin navigation and the page padding.
+ */
+.hryvinskyi-core-menu .hryvinskyi-core-menu--grouped {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px 24px;
+    width: max-content;
+    max-width: calc(100vw - 18rem);
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.hryvinskyi-core-menu.active .hryvinskyi-core-menu--grouped,
+.hryvinskyi-core-menu._active .hryvinskyi-core-menu--grouped {
+    display: flex;
+}
+
+.hryvinskyi-core-menu .hryvinskyi-core-menu--grouped .hryvinskyi-core-menu__group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.hryvinskyi-core-menu .hryvinskyi-core-menu--grouped .hryvinskyi-core-menu__heading {
+    padding: 6px 12px 4px;
+    color: #858585;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 1.4;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: default;
+}
+
+.hryvinskyi-core-menu .hryvinskyi-core-menu--grouped .hryvinskyi-core-menu__columns {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.hryvinskyi-core-menu .hryvinskyi-core-menu--grouped .hryvinskyi-core-menu__column {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.hryvinskyi-core-menu .hryvinskyi-core-menu--grouped .hryvinskyi-core-menu__column li a {
+    white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+    .hryvinskyi-core-menu.active .hryvinskyi-core-menu--grouped,
+    .hryvinskyi-core-menu._active .hryvinskyi-core-menu--grouped {
+        flex-direction: column;
+    }
+
+    .hryvinskyi-core-menu .hryvinskyi-core-menu--grouped .hryvinskyi-core-menu__columns {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .hryvinskyi-core-menu .hryvinskyi-core-menu--grouped .hryvinskyi-core-menu__column li a {
+        white-space: normal;
+    }
 }

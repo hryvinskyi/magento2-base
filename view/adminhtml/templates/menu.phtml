@@ -21,6 +21,12 @@ $style = '.page-title-wrapper .page-title {
     display: none;
 }';
 
+/*
+ * Item and menu icons are printed unescaped: they are SVG markup configured in layout XML, never user input.
+ * With groups, the menu element is a div (a list cannot hold the group containers). It stays the toggle button's
+ * next element and carries data-target="dropdown": the admin dropdown widget closes on any click outside that
+ * element, so a click on a heading or a gap keeps the menu open.
+ */
 ?>
 <?= /* @noEscape */ $secureRenderer->renderTag('style', [], $style, false) ?>
 <div class="admin__action-dropdown-wrap hryvinskyi-core-menu">
@@ -34,9 +40,11 @@ $style = '.page-title-wrapper .page-title {
         <span class="admin__action-dropdown-text"><?= $escaper->escapeHtml(__($block->getMenuTitle())) ?></span>
     </button>
 
+<?php if (!$block->isGrouped()): ?>
     <ul class="admin__action-dropdown-menu">
-        <?php foreach ($block->getMenuItems() as $item): ?>
-            <?php if ($item->isActive()): ?>
+        <?php foreach ($block->getSections() as $section): ?>
+            <?php foreach ($section->getColumns() as $column): ?>
+                <?php foreach ($column as $item): ?>
                 <li<?= $item->getClass() ? ' class="' . $escaper->escapeHtmlAttr($item->getClass()) . '"' : '' ?>>
                     <a href="<?= $escaper->escapeUrl($item->getUrl()) ?>">
                         <?php if ($item->getIcon()): ?>
@@ -45,7 +53,43 @@ $style = '.page-title-wrapper .page-title {
                         <?= $escaper->escapeHtml(__($item->getLabel())) ?>
                     </a>
                 </li>
-            <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
         <?php endforeach; ?>
     </ul>
+<?php else: ?>
+    <div class="admin__action-dropdown-menu hryvinskyi-core-menu--grouped" data-target="dropdown">
+        <?php foreach ($block->getSections() as $section): ?>
+            <?php $group = $section->getGroup(); ?>
+            <?php if ($group !== null): ?>
+                <?php $headingId = $block->getGroupHeadingId($group); ?>
+        <div class="hryvinskyi-core-menu__group"
+             role="group"
+             aria-labelledby="<?= $escaper->escapeHtmlAttr($headingId) ?>">
+            <div class="hryvinskyi-core-menu__heading" id="<?= $escaper->escapeHtmlAttr($headingId) ?>">
+                <?= $escaper->escapeHtml(__($group->getLabel())) ?>
+            </div>
+            <?php else: ?>
+        <div class="hryvinskyi-core-menu__group hryvinskyi-core-menu__group--untitled">
+            <?php endif; ?>
+            <div class="hryvinskyi-core-menu__columns">
+                <?php foreach ($section->getColumns() as $column): ?>
+                <ul class="hryvinskyi-core-menu__column">
+                    <?php foreach ($column as $item): ?>
+                    <li<?= $item->getClass() ? ' class="' . $escaper->escapeHtmlAttr($item->getClass()) . '"' : '' ?>>
+                        <a href="<?= $escaper->escapeUrl($item->getUrl()) ?>">
+                            <?php if ($item->getIcon()): ?>
+                                <span class="menu-item-icon"><?= /* @noEscape */ $item->getIcon() ?></span>
+                            <?php endif; ?>
+                            <?= $escaper->escapeHtml(__($item->getLabel())) ?>
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
 </div>

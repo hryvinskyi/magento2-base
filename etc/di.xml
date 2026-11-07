@@ -13,6 +13,14 @@
                 type="Hryvinskyi\Base\View\Helper\SecureHtmlRender\HtmlRenderer"/>
     <preference for="Hryvinskyi\Base\Api\Menu\MenuItemFactoryInterface"
                 type="Hryvinskyi\Base\Model\Menu\MenuItemFactory"/>
+    <preference for="Hryvinskyi\Base\Model\Menu\RoutedMenuItemInterface"
+                type="Hryvinskyi\Base\Model\Menu\MenuItem"/>
+    <preference for="Hryvinskyi\Base\Api\Menu\MenuGroupFactoryInterface"
+                type="Hryvinskyi\Base\Model\Menu\MenuGroupConfigParser"/>
+    <preference for="Hryvinskyi\Base\Api\Menu\MenuGroupInterface"
+                type="Hryvinskyi\Base\Model\Menu\MenuGroup"/>
+    <preference for="Hryvinskyi\Base\Model\Menu\MenuSectionArrangerInterface"
+                type="Hryvinskyi\Base\Model\Menu\MenuSectionArranger"/>
     <type name="Magento\Framework\View\Layout">
         <plugin name="Hryvinskyi_Base::plugin_layout" type="Hryvinskyi\Base\Plugin\Layout" sortOrder="10"/>
     </type>

@@ -106,6 +106,7 @@ A reusable dropdown menu component for Magento admin pages that can be configure
 - Sortable menu items with sort_order
 - Custom CSS classes and icons per item
 - Per-item ACL resource: items the current admin user may not open are hidden
+- Optional titled groups shown side by side, with long groups split into columns
 - Translatable labels
 - Reusable across multiple modules
 
@@ -198,6 +199,7 @@ Then include it in your page layouts:
 | `icon` | string | No | SVG or HTML icon content |
 | `is_active` | boolean | No | Show/hide item (default: true) |
 | `resource` | string | No | ACL resource id the admin user needs to see the item (since 2.2.0) |
+| `group` | string | No | Code of the group the item is listed in (since 2.3.0) |
 
 An item that holds a value of the wrong type (for example an array as `label`, or an empty `resource`) is left out
 of the menu and logged as a warning; the rest of the menu still renders.
@@ -224,6 +226,67 @@ menu renders nothing.
 
 The per-item check hides links; it does not protect the pages. Each controller still declares its own
 `ADMIN_RESOURCE`.
+
+**Groups and Columns (since 2.3.0):**
+
+A long menu reads better in titled groups. Declare the groups in the `groups` argument (code → `label` and
+`sort_order`) and name a group in each item's `group` key:
+
+```xml
+<block class="Hryvinskyi\Base\Block\Adminhtml\Menu" name="my.module.menu">
+    <arguments>
+        <argument name="menu_title" xsi:type="string" translate="true">My Module</argument>
+        <argument name="groups" xsi:type="array">
+            <item name="reports" xsi:type="array">
+                <item name="label" xsi:type="string" translate="true">Reports</item>
+                <item name="sort_order" xsi:type="number">10</item>
+            </item>
+            <item name="settings" xsi:type="array">
+                <item name="label" xsi:type="string" translate="true">Settings</item>
+                <item name="sort_order" xsi:type="number">20</item>
+            </item>
+        </argument>
+        <argument name="max_items_per_column" xsi:type="number">6</argument>
+        <argument name="items" xsi:type="array">
+            <item name="sales" xsi:type="array">
+                <item name="label" xsi:type="string" translate="true">Sales</item>
+                <item name="route" xsi:type="string">mymodule/reports/sales</item>
+                <item name="group" xsi:type="string">reports</item>
+                <item name="sort_order" xsi:type="number">10</item>
+            </item>
+            <item name="general" xsi:type="array">
+                <item name="label" xsi:type="string" translate="true">General</item>
+                <item name="route" xsi:type="string">adminhtml/system_config/edit</item>
+                <item name="route_params" xsi:type="array">
+                    <item name="section" xsi:type="string">mymodule</item>
+                </item>
+                <item name="group" xsi:type="string">settings</item>
+                <item name="resource" xsi:type="string">Vendor_MyModule::config</item>
+            </item>
+        </argument>
+    </arguments>
+</block>
+```
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `groups` | array | Group code → `label` (required, translatable) and `sort_order` (number, default 0) |
+| `max_items_per_column` | number | Most items in one column of a group (default 6) |
+
+- Groups are shown side by side in `sort_order` (equal sort orders keep the declared order), each under its
+  heading; a group wraps to a new row when the screen is too narrow, and below 768 px everything stacks.
+- Inside a group, items keep their `sort_order`. A group none of whose items the admin may see (denied by
+  `resource`, or `is_active` false) is not shown.
+- A group longer than `max_items_per_column` is split into even columns, the first columns taking the extra item:
+  with the default of 6, 7 items become 4 + 3 and 13 items 5 + 4 + 4.
+- Items without `group`, or naming a group the menu does not declare, are listed after every group without a
+  heading. An undeclared code is logged as a warning on every page that renders the menu, so fix it rather than
+  leave it.
+- A menu without `groups`, or whose items name none, is the single list it always was.
+- Any module can add its own entries to another module's groups from its own layout file by naming the group's
+  code; only the menu's owner declares the groups.
+- A malformed group (no label, a value of the wrong type) or a malformed `max_items_per_column` is logged and
+  ignored, like a malformed item.
 
 **Custom Menu Icon:**
 

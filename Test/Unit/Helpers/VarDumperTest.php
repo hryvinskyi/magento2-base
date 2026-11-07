@@ -7,6 +7,8 @@
 
 namespace Hryvinskyi\Base\Test\Unit\Helpers;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 use Hryvinskyi\Base\Helper\VarDumper;
 
@@ -35,15 +37,15 @@ class VarDumperTest extends TestCase
         $serializedObj = 'O:16:"nonExistingClass":0:{}';
         $incompleteObj = unserialize($serializedObj);
         $dumpResult = VarDumper::dumpAsString($incompleteObj);
-        $this->assertContains("__PHP_Incomplete_Class#1\n(", $dumpResult);
-        $this->assertContains('nonExistingClass', $dumpResult);
+        $this->assertStringContainsString("__PHP_Incomplete_Class#1\n(", $dumpResult);
+        $this->assertStringContainsString('nonExistingClass', $dumpResult);
     }
     public function testExportIncompleteObject()
     {
         $serializedObj = 'O:16:"nonExistingClass":0:{}';
         $incompleteObj = unserialize($serializedObj);
         $exportResult = VarDumper::export($incompleteObj);
-        $this->assertContains('nonExistingClass', $exportResult);
+        $this->assertStringContainsString('nonExistingClass', $exportResult);
     }
     public function testDumpObject()
     {
@@ -53,16 +55,16 @@ class VarDumperTest extends TestCase
         $obj->name = 'test-name';
         $obj->price = 19;
         $dumpResult = VarDumper::dumpAsString($obj);
-        $this->assertContains("stdClass#1\n(", $dumpResult);
-        $this->assertContains("[name] => 'test-name'", $dumpResult);
-        $this->assertContains('[price] => 19', $dumpResult);
+        $this->assertStringContainsString("stdClass#1\n(", $dumpResult);
+        $this->assertStringContainsString("[name] => 'test-name'", $dumpResult);
+        $this->assertStringContainsString('[price] => 19', $dumpResult);
     }
 
     /**
      * Data provider for [[testExport()]].
      * @return array test data
      */
-    public function dataProviderExport()
+    public static function dataProviderExport()
     {
         // Regular :
         $data = [
@@ -149,11 +151,10 @@ RESULT;
     }
 
     /**
-     * @dataProvider dataProviderExport
-     *
      * @param mixed $var
      * @param string $expectedResult
      */
+    #[DataProvider('dataProviderExport')]
     public function testExport($var, $expectedResult)
     {
         $exportResult = VarDumper::export($var);
@@ -162,9 +163,7 @@ RESULT;
         $this->assertEquals($expected, $actual);
     }
 
-    /**
-     * @depends testExport
-     */
+    #[Depends('testExport')]
     public function testExportObjectFallback()
     {
         $var = new \StdClass();
@@ -180,16 +179,14 @@ RESULT;
         $this->assertNotEmpty($exportResult);
     }
 
-    /**
-     * @depends testDumpObject
-     */
+    #[Depends('testDumpObject')]
     public function testDumpClassWithCustomDebugInfo()
     {
         $object = new CustomDebugInfo();
         $object->volume = 10;
         $object->unitPrice = 15;
         $dumpResult = VarDumper::dumpAsString($object);
-        $this->assertContains('totalPrice', $dumpResult);
-        $this->assertNotContains('unitPrice', $dumpResult);
+        $this->assertStringContainsString('totalPrice', $dumpResult);
+        $this->assertStringNotContainsString('unitPrice', $dumpResult);
     }
 }

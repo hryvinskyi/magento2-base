@@ -9,8 +9,12 @@ declare(strict_types=1);
 
 namespace Hryvinskyi\Base\Block\Adminhtml;
 
+use Hryvinskyi\Base\Api\Menu\MenuGroupFactoryInterface;
+use Hryvinskyi\Base\Api\Menu\MenuGroupInterface;
 use Hryvinskyi\Base\Api\Menu\MenuItemFactoryInterface;
 use Hryvinskyi\Base\Api\Menu\MenuItemInterface;
+use Hryvinskyi\Base\Model\Menu\MenuSection;
+use Hryvinskyi\Base\Model\Menu\MenuSectionArrangerInterface;
 use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
 
@@ -18,11 +22,21 @@ use Magento\Backend\Block\Template\Context;
  * Extensible admin menu block with layout XML configuration support
  *
  * Items come from the "items" layout argument. An item whose "resource" names an ACL resource the current
- * admin user is not allowed is left out; an item without "resource" is always listed. A malformed item is
- * logged and left out instead of breaking the page.
+ * admin user is not allowed is left out; an item without "resource" is always listed. An item is shown when it
+ * is allowed and active. A malformed item is logged and left out instead of breaking the page.
+ *
+ * The optional "groups" argument declares titled groups (code => label, sort_order) that items join through
+ * their "group" key; "max_items_per_column" (default 6) splits a long group into columns. A malformed group or
+ * column limit is logged and ignored. A menu that declares no group, or whose items name none, renders as a
+ * single list.
  */
 class Menu extends Template
 {
+    /**
+     * Column limit used when the layout gives none or a malformed one
+     */
+    private const DEFAULT_MAX_ITEMS_PER_COLUMN = 6;
+
     /**
      * Default hamburger icon SVG
      */
@@ -38,18 +52,27 @@ class Menu extends Template
     protected $_template = 'Hryvinskyi_Base::menu.phtml';
 
     /**
-     * @var list<MenuItemInterface>|null
+     * @var array<int|string, MenuItemInterface>|null
      */
     private ?array $sortedItems = null;
 
     /**
+     * @var list<MenuSection>|null
+     */
+    private ?array $sections = null;
+
+    /**
      * @param Context $context
      * @param MenuItemFactoryInterface $menuItemFactory
+     * @param MenuGroupFactoryInterface $menuGroupFactory
+     * @param MenuSectionArrangerInterface $sectionArranger
      * @param array<string,mixed> $data
      */
     public function __construct(
         Context $context,
         private readonly MenuItemFactoryInterface $menuItemFactory,
+        private readonly MenuGroupFactoryInterface $menuGroupFactory,
+        private readonly MenuSectionArrangerInterface $sectionArranger,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -78,11 +101,78 @@ class Menu extends Template
     }
 
     /**
-     * Get the menu items the current admin user may see, sorted by sort order
+     * Get the menu items the current admin user is allowed, sorted by sort order, inactive ones included
      *
      * @return list<MenuItemInterface>
      */
     public function getMenuItems(): array
+    {
+        return array_values($this->allowedItems());
+    }
+
+    /**
+     * Check whether the menu shows at least one item: one that is allowed and active
+     *
+     * @return bool
+     */
+    public function hasItems(): bool
+    {
+        return $this->visibleItems() !== [];
+    }
+
+    /**
+     * Get the shown items laid out as sections (one per group with items, then the untitled rest) of columns
+     *
+     * @return list<MenuSection>
+     */
+    public function getSections(): array
+    {
+        if ($this->sections === null) {
+            $this->sections = $this->sectionArranger->arrange(
+                $this->visibleItems(),
+                $this->readGroups(),
+                $this->readMaxItemsPerColumn(),
+                (string) $this->getNameInLayout()
+            );
+        }
+
+        return $this->sections;
+    }
+
+    /**
+     * Check whether at least one section is a titled group, so the menu renders as groups rather than one list
+     *
+     * @return bool
+     */
+    public function isGrouped(): bool
+    {
+        foreach ($this->getSections() as $section) {
+            if ($section->getGroup() !== null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the HTML id of a group's heading, unique per menu block and group
+     *
+     * @param MenuGroupInterface $group
+     * @return string
+     */
+    public function getGroupHeadingId(MenuGroupInterface $group): string
+    {
+        return 'hryvinskyi-core-menu-' . $this->toIdPart((string) $this->getNameInLayout())
+            . '-' . $this->toIdPart($group->getCode());
+    }
+
+    /**
+     * Get the allowed items keyed by item name, sorted by sort order; built once per block
+     *
+     * @return array<int|string, MenuItemInterface>
+     */
+    private function allowedItems(): array
     {
         if ($this->sortedItems !== null) {
             return $this->sortedItems;
@@ -92,7 +182,7 @@ class Menu extends Template
         foreach ($this->readItemsConfig() as $name => $itemData) {
             $item = $this->createItem((string) $name, $itemData);
             if ($item !== null && $this->isAllowed($item)) {
-                $items[] = $item;
+                $items[$name] = $item;
             }
         }
 
@@ -102,13 +192,13 @@ class Menu extends Template
     }
 
     /**
-     * Check if menu has items
+     * Get the items the menu shows: allowed and active, keyed by item name, in display order
      *
-     * @return bool
+     * @return array<int|string, MenuItemInterface>
      */
-    public function hasItems(): bool
+    private function visibleItems(): array
     {
-        return count($this->getMenuItems()) > 0;
+        return array_filter($this->allowedItems(), static fn (MenuItemInterface $item): bool => $item->isActive());
     }
 
     /**
@@ -151,6 +241,97 @@ class Menu extends Template
         }
 
         return $itemsConfig;
+    }
+
+    /**
+     * Read the "groups" layout argument; a malformed group is logged and left out
+     *
+     * @return list<MenuGroupInterface>
+     */
+    private function readGroups(): array
+    {
+        $groupsConfig = $this->getData('groups');
+
+        if ($groupsConfig === null) {
+            return [];
+        }
+
+        if (!is_array($groupsConfig)) {
+            $this->_logger->warning(
+                'Admin menu block ignores its "groups" argument: an array is expected.',
+                ['block' => $this->getNameInLayout(), 'given' => get_debug_type($groupsConfig)]
+            );
+
+            return [];
+        }
+
+        $groups = [];
+        foreach ($groupsConfig as $code => $groupData) {
+            $group = $this->createGroup((string) $code, $groupData);
+            if ($group !== null) {
+                $groups[] = $group;
+            }
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Build one menu group, or log and return null when its configuration is malformed
+     *
+     * @param string $code
+     * @param mixed $groupData
+     * @return MenuGroupInterface|null
+     */
+    private function createGroup(string $code, mixed $groupData): ?MenuGroupInterface
+    {
+        if (!is_array($groupData)) {
+            $this->logSkippedGroup($code, 'the group configuration must be an array');
+
+            return null;
+        }
+
+        $data = [];
+        foreach ($groupData as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+
+        try {
+            return $this->menuGroupFactory->create($code, $data);
+        } catch (\InvalidArgumentException $exception) {
+            $this->logSkippedGroup($code, $exception->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * Read the "max_items_per_column" layout argument
+     *
+     * A positive whole number is used as given; anything else falls back to the default, with a warning when a
+     * value was given.
+     *
+     * @return int
+     */
+    private function readMaxItemsPerColumn(): int
+    {
+        $value = $this->getData('max_items_per_column');
+
+        if ($value === null) {
+            return self::DEFAULT_MAX_ITEMS_PER_COLUMN;
+        }
+
+        $limit = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (is_int($limit)) {
+            return $limit;
+        }
+
+        $this->_logger->warning(
+            'Admin menu block ignores its "max_items_per_column" argument: a positive whole number is expected.',
+            ['block' => $this->getNameInLayout(), 'given' => is_scalar($value) ? $value : get_debug_type($value)]
+        );
+
+        return self::DEFAULT_MAX_ITEMS_PER_COLUMN;
     }
 
     /**
@@ -211,17 +392,43 @@ class Menu extends Template
     }
 
     /**
-     * Sort menu items by sort order; items with the same sort order keep their configured order
+     * Log a menu group left out because of its configuration
      *
-     * @param list<MenuItemInterface> $items
-     * @return list<MenuItemInterface>
+     * @param string $code
+     * @param string $reason
+     * @return void
+     */
+    private function logSkippedGroup(string $code, string $reason): void
+    {
+        $this->_logger->warning(
+            'Admin menu group skipped: ' . $reason,
+            ['block' => $this->getNameInLayout(), 'group' => $code]
+        );
+    }
+
+    /**
+     * Sort menu items by sort order, keeping their names; items with the same sort order keep their configured order
+     *
+     * @param array<int|string,MenuItemInterface> $items
+     * @return array<int|string, MenuItemInterface>
      */
     private function sortItems(array $items): array
     {
-        usort($items, static function (MenuItemInterface $a, MenuItemInterface $b): int {
+        uasort($items, static function (MenuItemInterface $a, MenuItemInterface $b): int {
             return $a->getSortOrder() <=> $b->getSortOrder();
         });
 
         return $items;
+    }
+
+    /**
+     * Turn a name into a part of an HTML id: letters, digits, "_" and "-" only
+     *
+     * @param string $name
+     * @return string
+     */
+    private function toIdPart(string $name): string
+    {
+        return trim((string) preg_replace('/[^A-Za-z0-9_-]+/', '-', $name), '-');
     }
 }

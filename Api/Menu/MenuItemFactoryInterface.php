@@ -19,7 +19,8 @@ interface MenuItemFactoryInterface
     /**
      * Create menu item from array configuration
      *
-     * Known keys: label, route, route_params, sort_order, is_active, class, icon, resource.
+     * Known keys: label, route, route_params, sort_order, is_active, class, icon, resource, group (the code of a
+     * group the menu declares, a string; '' or absent means none).
      * A key that is present with a value of the wrong type is rejected rather than coerced.
      *
      * @param array<string,mixed> $data

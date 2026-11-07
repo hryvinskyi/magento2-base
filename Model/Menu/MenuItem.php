@@ -9,14 +9,21 @@ declare(strict_types=1);
 
 namespace Hryvinskyi\Base\Model\Menu;
 
-use Hryvinskyi\Base\Api\Menu\MenuItemInterface;
 use Magento\Backend\Model\UrlInterface;
 
 /**
  * Menu item implementation with route-based URL generation
+ *
+ * Created through the generated RoutedMenuItemInterfaceFactory from scalar values; the route parameters arrive
+ * through withRouteParams().
  */
-class MenuItem implements MenuItemInterface
+class MenuItem implements RoutedMenuItemInterface
 {
+    /**
+     * @var array<string,mixed>
+     */
+    private array $routeParams = [];
+
     /**
      * @var string|null
      */
@@ -26,24 +33,36 @@ class MenuItem implements MenuItemInterface
      * @param UrlInterface $urlBuilder
      * @param string $label
      * @param string $route
-     * @param array<string,mixed> $routeParams
      * @param int $sortOrder
      * @param bool $isActive
      * @param string $cssClass
      * @param string $icon
      * @param string|null $resource ACL resource id required to see the item; null means no check
+     * @param string $group Code of the group the item is listed in; empty for none
      */
     public function __construct(
         private readonly UrlInterface $urlBuilder,
         private readonly string $label = '',
         private readonly string $route = '',
-        private readonly array $routeParams = [],
         private readonly int $sortOrder = 0,
         private readonly bool $isActive = true,
         private readonly string $cssClass = '',
         private readonly string $icon = '',
-        private readonly ?string $resource = null
+        private readonly ?string $resource = null,
+        private readonly string $group = ''
     ) {
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function withRouteParams(array $routeParams): RoutedMenuItemInterface
+    {
+        $copy = clone $this;
+        $copy->routeParams = $routeParams;
+        $copy->generatedUrl = null;
+
+        return $copy;
     }
 
     /**
@@ -104,5 +123,13 @@ class MenuItem implements MenuItemInterface
     public function getResource(): ?string
     {
         return $this->resource;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getGroup(): string
+    {
+        return $this->group;
     }
 }

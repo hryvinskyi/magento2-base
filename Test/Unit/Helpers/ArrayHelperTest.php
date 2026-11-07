@@ -10,6 +10,7 @@ namespace Hryvinskyi\Base\Test\Unit\Helpers;
 use Hryvinskyi\Base\Helper\UnsetArrayValue;
 use Hryvinskyi\Base\Helper\ReplaceArrayValue;
 use Hryvinskyi\Base\Helper\ArrayHelper;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class Base {
     public static function className()
@@ -351,6 +352,8 @@ class ArrayHelperTest extends \PHPUnit\Framework\TestCase
 
     public function testMultisortInvalidParamExceptionDirection()
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('The length of $direction parameter must be the same as that of $keys.');
         $data = ['foo' => 'bar'];
         ArrayHelper::multisort($data, ['foo'], []);
     }
@@ -358,6 +361,8 @@ class ArrayHelperTest extends \PHPUnit\Framework\TestCase
 
     public function testMultisortInvalidParamExceptionSortFlag()
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('The length of $sortFlag parameter must be the same as that of $keys.');
         $data = ['foo' => 'bar'];
         ArrayHelper::multisort($data, ['foo'], ['foo'], []);
     }
@@ -697,7 +702,7 @@ class ArrayHelperTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(ArrayHelper::keyExists('B', $array, false));
         $this->assertFalse(ArrayHelper::keyExists('c', $array, false));
     }
-    public function valueProvider()
+    public static function valueProvider()
     {
         return [
             ['name', 'test'],
@@ -726,12 +731,11 @@ class ArrayHelperTest extends \PHPUnit\Framework\TestCase
         ];
     }
     /**
-     * @dataProvider valueProvider
-     *
      * @param $key
      * @param $expected
      * @param null $default
      */
+    #[DataProvider('valueProvider')]
     public function testGetValue($key, $expected, $default = null)
     {
         $array = [
@@ -766,31 +770,52 @@ class ArrayHelperTest extends \PHPUnit\Framework\TestCase
         $object = new Post1();
         $this->assertEquals(23, ArrayHelper::getValue($object, 'id'));
     }
-    /**
-     * This is expected to result in a PHP error.
-     * @requires PHPUnit 6.0
-     */
-    public function testGetValueNonexistingProperties1()
+    public function testGetValueNonexistingProperties1(): void
     {
-        $this->expectException('PHPUnit\Framework\Error\Notice');
         $object = new Post1();
-        $this->assertEquals(null, ArrayHelper::getValue($object, 'nonExisting'));
+        [$value, $warnings] = $this->captureWarnings(
+            static fn () => ArrayHelper::getValue($object, 'nonExisting')
+        );
+        $this->assertNull($value);
+        $this->assertSame(['Undefined property: ' . Post1::class . '::$nonExisting'], $warnings);
     }
-    /**
-     * This is expected to result in a PHP error.
-     * @requires PHPUnit 6.0
-     */
-    public function testGetValueNonexistingProperties2()
+
+    public function testGetValueNonexistingProperties2(): void
     {
-        $this->expectException('PHPUnit\Framework\Error\Notice');
         $arrayObject = new \ArrayObject(['id' => 23], \ArrayObject::ARRAY_AS_PROPS);
-        $this->assertEquals(23, ArrayHelper::getValue($arrayObject, 'nonExisting'));
+        [$value, $warnings] = $this->captureWarnings(
+            static fn () => ArrayHelper::getValue($arrayObject, 'nonExisting')
+        );
+        $this->assertNull($value);
+        $this->assertSame(['Undefined array key "nonExisting"'], $warnings);
+    }
+
+    /**
+     * Runs the callback and collects the PHP warnings it raises, so a test can assert them.
+     *
+     * @param callable(): mixed $callback
+     * @return array{0: mixed, 1: list<string>}
+     */
+    private function captureWarnings(callable $callback): array
+    {
+        $warnings = [];
+        set_error_handler(static function (int $level, string $message) use (&$warnings): bool {
+            $warnings[] = $message;
+            return true;
+        }, E_WARNING);
+        try {
+            $value = $callback();
+        } finally {
+            restore_error_handler();
+        }
+
+        return [$value, $warnings];
     }
     /**
      * Data provider for [[testSetValue()]].
      * @return array test data
      */
-    public function dataProviderSetValue()
+    public static function dataProviderSetValue()
     {
         return [
             [
@@ -1008,13 +1033,12 @@ class ArrayHelperTest extends \PHPUnit\Framework\TestCase
         ];
     }
     /**
-     * @dataProvider dataProviderSetValue
-     *
      * @param array $array_input
      * @param string|array|null $key
      * @param mixed $value
      * @param mixed $expected
      */
+    #[DataProvider('dataProviderSetValue')]
     public function testSetValue($array_input, $key, $value, $expected)
     {
         ArrayHelper::setValue($array_input, $key, $value);
@@ -1134,6 +1158,8 @@ class ArrayHelperTest extends \PHPUnit\Framework\TestCase
 
     public function testInException()
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Argument $haystack must be an array or implement Traversable');
         ArrayHelper::isIn('value', null);
     }
 
@@ -1149,6 +1175,8 @@ class ArrayHelperTest extends \PHPUnit\Framework\TestCase
 
     public function testIsSubsetException()
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Argument $needles must be an array or implement Traversable');
         ArrayHelper::isSubset('a', new \ArrayObject(['a', 'b']));
     }
 

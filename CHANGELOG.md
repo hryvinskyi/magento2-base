@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-11-07
+
+### Added
+- Admin menu groups. The new `groups` layout argument declares titled groups (code → `label`, `sort_order`), and an
+  item joins one with the new `group` key. Groups are listed by sort order, each under its heading, side by side;
+  a group none of whose items the admin may see (denied by ACL or `is_active` false) is not shown. Items naming no
+  group, or a group the menu does not declare, follow every group untitled; an undeclared code is logged as a
+  warning on each page that renders the menu. A menu that declares no group, or whose items name none, renders
+  the same single list as before.
+- Columns for long groups: the new `max_items_per_column` layout argument (default 6) splits a longer group into
+  even columns (13 items → 5, 4, 4). Under 768 px the groups and columns stack.
+- `Api\Menu\MenuGroupInterface` and `Api\Menu\MenuGroupFactoryInterface` (creates a group from layout
+  configuration; a group without a label, or with a value of the wrong type, is skipped and logged).
+- `Api\Menu\GroupedMenuItemInterface` (`getGroup()`), implemented by the built-in menu item. `MenuItemInterface` is
+  unchanged: existing implementations keep working and are listed ungrouped.
+- Module `phpunit.xml.dist` (unit suite, with a bootstrap that generates `…Factory` stubs on demand) and
+  `phpstan.neon.dist` (level 10, the menu code and its tests); integration tests rendering the menu through the
+  real layout.
+
+### Changed
+- Menu items are created through Magento's generated factory instead of `new`; `MenuItemFactory` only validates the
+  configuration. The item factory receives scalar values only and the route parameters reach the item after it is
+  created. (The block's own layout `data`, `items` included, still goes through the object manager when the layout
+  builds the block, as for every block.) `MenuItem` no longer takes `routeParams` in its constructor (use `withRouteParams()`) and takes
+  `group` as its last parameter.
+- An item with `is_active` false is left out by the block rather than by the template. `getMenuItems()` still returns
+  the allowed items, inactive ones included; `hasItems()` now counts only the items shown, so a menu whose items
+  are all inactive renders nothing instead of an empty dropdown.
+- The block's constructor takes the group factory and the section arranger before `$data`. Neither the block nor
+  `MenuItem` is `@api`: a subclass or a direct caller of either constructor must follow these signatures.
+- A group code is letters, digits, `_` and `-`; any other code is rejected (the group is skipped and logged), so two
+  codes can never give the same heading id.
+
+### Removed
+- A stylesheet rule that could never match (the menu is not inside the toggle button).
+
+### Fixed
+- `Html::renderTagAttributes()` (and every tag `Html` builds) again leaves out an attribute whose value is `null`, as
+  documented. Since 2.1.11 such an attribute was printed bare: `Html::textInput('q')` gave
+  `<input type="text" name="q" value />` and `Html::label('Name')` gave `<label for>`. Use `true` for a boolean
+  attribute.
+- The `Html`, `ArrayHelper` and `VarDumper` unit tests run on PHPUnit 10 and assert this module's own output (void
+  elements closed with ` />`, `beginForm()` printing the method as given, `a()` printing the URL as given).
+
 ## [2.2.0] - 2026-09-25
 
 ### Added
