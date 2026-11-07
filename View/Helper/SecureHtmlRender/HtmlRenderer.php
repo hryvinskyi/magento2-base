@@ -11,10 +11,23 @@ use Hryvinskyi\Base\Helper\Html;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Helper\SecureHtmlRender\TagData;
 
+/**
+ * Renders the secure HTML renderer's tags through the module's Html builder.
+ */
 class HtmlRenderer extends \Magento\Framework\View\Helper\SecureHtmlRender\HtmlRenderer
 {
-    public function __construct(private readonly Escaper $escaper) {
+    /**
+     * @var Escaper
+     */
+    private readonly Escaper $htmlEscaper;
+
+    /**
+     * @param Escaper $escaper
+     */
+    public function __construct(Escaper $escaper)
+    {
         parent::__construct($escaper);
+        $this->htmlEscaper = $escaper;
     }
 
     /**
@@ -25,9 +38,11 @@ class HtmlRenderer extends \Magento\Framework\View\Helper\SecureHtmlRender\HtmlR
      */
     public function renderTag(TagData $tagData): string
     {
-        $content = null;
+        $content = '';
         if ($tagData->getContent() !== null) {
-            $content = $tagData->isTextContent() ? $this->escaper->escapeHtml($tagData->getContent()) : $tagData->getContent();
+            $content = $tagData->isTextContent()
+                ? $this->htmlEscaper->escapeHtml($tagData->getContent())
+                : $tagData->getContent();
         }
 
         return Html::tag($tagData->getTag(), $content, $tagData->getAttributes());

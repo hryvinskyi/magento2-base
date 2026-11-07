@@ -13,9 +13,6 @@ use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\State;
 
-/**
- * Class Config
- */
 class Config extends AbstractHelper
 {
     /**

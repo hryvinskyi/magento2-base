@@ -12,7 +12,9 @@
 
 namespace Hryvinskyi\Base\Helper;
 
-
+/**
+ * JSON encoding and decoding that throws an exception on any error.
+ */
 class Json
 {
     /**
@@ -24,16 +26,17 @@ class Json
 
     /**
      * @var bool Avoids objects with zero-indexed keys to be encoded as array
-     * `Json::encode((object)['test'])` will be encoded as an object not as an array. This matches the behaviour of `json_encode()`.
-     * Defaults too false to avoid any backwards compatibility issues.
+     * `Json::encode((object)['test'])` will be encoded as an object not as an array.
+     * This matches the behaviour of `json_encode()`.
+     * Defaults to false to avoid any backwards compatibility issues.
      * Enable for single purpose: `Json::$keepObjectType = true;`
-     * @see JsonResponseFormatter documentation to enable for all JSON responses
      */
     public static $keepObjectType = false;
 
     /**
      * List of JSON Error messages assigned to constant names for better handling of version differences
-     * @var array
+     *
+     * @var array<string,string>
      */
     public static $jsonErrorMessages = [
         'JSON_ERROR_SYNTAX' => 'Syntax error',
@@ -47,16 +50,16 @@ class Json
     /**
      * Encodes the given value into a JSON string.
      *
-     * The method enhances `json_encode()` by supporting JavaScript expressions.
-     * In particular, the method will not encode a JavaScript expression that is
-     * represented in terms of a [[JsExpression]] object.
+     * Unlike `json_encode()`, objects are first converted to arrays: `JsonSerializable` through
+     * `jsonSerialize()`, `Arrayable` through `toArray()`, generators and other traversables through their items,
+     * any other object through its public properties.
      *
      * Note that data encoded as JSON must be UTF-8 encoded according to the JSON specification.
      * You must ensure strings passed to this method have proper encoding before passing them.
      *
      * @param mixed $value the data to be encoded.
-     * @param int $options the encoding options. For more details please refer to
-     * <https://www.php.net/manual/en/function.json-encode.php>. Default is `JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE`.
+     * @param int $options the encoding options, see <https://www.php.net/manual/en/function.json-encode.php>.
+     *     Default is `JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE`.
      * @return string the encoding result.
      * @throws InvalidParamException if there is any encoding error.
      */
@@ -64,8 +67,10 @@ class Json
     {
         $expressions = [];
         $value = static::processData($value, $expressions, uniqid('', true));
-        set_error_handler(function () {
+        set_error_handler(function (): bool {
             static::handleJsonError(JSON_ERROR_SYNTAX);
+
+            return true;
         }, E_WARNING);
 
         if (static::$prettyPrint === true) {
@@ -77,15 +82,17 @@ class Json
         $json = json_encode($value, $options);
         restore_error_handler();
         static::handleJsonError(json_last_error());
+        if ($json === false) {
+            throw new InvalidParamException('Unknown JSON encoding/decoding error.');
+        }
+
         return $expressions === [] ? $json : strtr($json, $expressions);
     }
 
     /**
      * Encodes the given value into a JSON string HTML-escaping entities so it is safe to be embedded in HTML code.
      *
-     * The method enhances `json_encode()` by supporting JavaScript expressions.
-     * In particular, the method will not encode a JavaScript expression that is
-     * represented in terms of a [[JsExpression]] object.
+     * Objects are converted the same way as by encode().
      *
      * Note that data encoded as JSON must be UTF-8 encoded according to the JSON specification.
      * You must ensure strings passed to this method have proper encoding before passing them.
@@ -96,12 +103,18 @@ class Json
      */
     public static function htmlEncode($value)
     {
-        return static::encode($value, JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS);
+        return static::encode(
+            $value,
+            JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS
+        );
     }
 
     /**
      * Decodes the given JSON string into a PHP data structure.
-     * @param string $json the JSON string to be decoded
+     *
+     * Null and an empty string decode to null; an array is refused with an exception.
+     *
+     * @param string|array<mixed>|null $json the JSON string to be decoded
      * @param bool $asArray whether to return objects in terms of associative arrays.
      * @return mixed the PHP data
      * @throws InvalidParamException if there is any decoding error
@@ -119,11 +132,11 @@ class Json
     }
 
     /**
-     * Handles [[encode()]] and [[decode()]] errors by throwing exceptions with the respective error message.
+     * Handles encode() and decode() errors by throwing exceptions with the respective error message.
      *
-     * @param int $lastError error code from [json_last_error()](https://www.php.net/manual/en/function.json-last-error.php).
+     * @param int $lastError error code from `json_last_error()`.
+     * @return void
      * @throws InvalidParamException if there is any encoding/decoding error.
-     * @since 2.0.6
      */
     protected static function handleJsonError($lastError)
     {
@@ -145,10 +158,11 @@ class Json
     }
 
     /**
-     * Pre-processes the data before sending it to `json_encode()`.
+     * Pre-processes the data before sending it to `json_encode()`, converting objects to arrays.
+     *
      * @param mixed $data the data to be processed
-     * @param array $expressions collection of JavaScript expressions
-     * @param string $expPrefix a prefix internally used to handle JS expressions
+     * @param array<string,string> $expressions placeholders in the encoded JSON mapped to their replacements
+     * @param string $expPrefix a prefix for the placeholders
      * @return mixed the processed data
      */
     protected static function processData($data, &$expressions, $expPrefix)
@@ -168,7 +182,7 @@ class Json
                 $data = $data->toArray();
             } elseif ($data instanceof \Generator) {
                 $_data = [];
-                foreach ($data as $name => $value) {
+                foreach (iterator_to_array($data) as $name => $value) {
                     $_data[$name] = static::processData($value, $expressions, $expPrefix);
                 }
                 $data = $_data;
@@ -186,11 +200,7 @@ class Json
                  */
                 $revertToObject = static::$keepObjectType;
 
-                $result = [];
-                foreach ($data as $name => $value) {
-                    $result[$name] = $value;
-                }
-                $data = $result;
+                $data = $data instanceof \Traversable ? iterator_to_array($data) : get_object_vars($data);
 
                 // Avoid empty objects to be returned as array (would break BC without keepObjectType flag)
                 if ($data === []) {

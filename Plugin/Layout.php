@@ -12,7 +12,7 @@ use Magento\Framework\App\Request\Http;
 use Magento\Framework\View\Layout as ViewLayout;
 
 /**
- * Class Layout
+ * Keeps the page out of the full page cache while the layout debug output is asked for.
  */
 class Layout
 {
@@ -41,15 +41,15 @@ class Layout
     }
 
     /**
-     * @param ViewLayout $subject
-     * @param $result
+     * Makes the layout uncacheable when the layout debug is on and the request asks for the XML or the hints.
      *
+     * @param ViewLayout $subject
+     * @param bool $result
      * @return bool
      */
     public function afterIsCacheable(ViewLayout $subject, $result): bool
     {
-        if (
-            $this->config->isEnabledLayoutDebug()
+        if ($this->config->isEnabledLayoutDebug()
             && (
                 $this->request->getParam('xml')
                 || $this->request->getParam('hints')
@@ -58,6 +58,6 @@ class Layout
             return false;
         }
 
-        return $result;
+        return (bool) $result;
     }
 }

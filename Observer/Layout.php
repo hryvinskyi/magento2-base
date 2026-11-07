@@ -13,6 +13,9 @@ use Hryvinskyi\Base\Helper\Config;
 use Hryvinskyi\Base\Model\Layout\LayoutXml;
 use Magento\Framework\Event\ObserverInterface;
 
+/**
+ * Records the generated layout XML when the layout debug is on.
+ */
 class Layout implements ObserverInterface
 {
     /**
@@ -39,6 +42,12 @@ class Layout implements ObserverInterface
         $this->layoutXml = $layoutXml;
     }
 
+    /**
+     * Records the XML of the layout the event carries.
+     *
+     * @param \Magento\Framework\Event\Observer $observer
+     * @return void
+     */
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
         if (!$this->config->isEnabledLayoutDebug()) {

@@ -19,15 +19,12 @@ use Magento\Framework\View\TemplateEngineInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 
-/**
- * Class DebugHints
- */
 class DebugHints
 {
     /**
      * XPath of configuration of the debug block names
      */
-    const XML_PATH_DEBUG_TEMPLATE_HINTS_BLOCKS = 'dev/debug/template_hints_blocks';
+    public const XML_PATH_DEBUG_TEMPLATE_HINTS_BLOCKS = 'dev/debug/template_hints_blocks';
 
     /**
      * @var Http
@@ -98,8 +95,7 @@ class DebugHints
         TemplateEngineInterface $invocationResult
     ): TemplateEngineInterface {
         $storeCode = $this->storeManager->getStore()->getCode();
-        if (
-            $this->config->isEnabledLayoutDebug() &&
+        if ($this->config->isEnabledLayoutDebug() &&
             $this->request->getParam('hints') &&
             $this->devHelper->isDevAllowed()
         ) {

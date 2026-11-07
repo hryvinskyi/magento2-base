@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-11-07
+
+### Fixed
+- `VarDumper::export()` of a multi-line closure no longer doubles every line break of its source.
+- `VarDumper::dump()`/`dumpAsString()` with highlighting no longer print the `<?php` tag on PHP 8.3 and later.
+- `ArrayHelper::filter()`: a rule whose path runs through a value that is not an array matches nothing, as
+  documented, instead of throwing a `TypeError`; the same for `!` exclude rules.
+- `ArrayHelper::toArray()`: a property mapping with an integer key and a Closure value stores the Closure's result
+  instead of throwing.
+- `Model\Layout\LayoutXml` starts without a layout (`null`) rather than relying on an untyped property, and
+  `NoSetLayoutException` builds its default message with `__()`.
+
+### Changed
+- `Html` refuses a value it cannot print as text (an array, a resource, an object without `__toString()`) as a list
+  item, a label, an `item` callback's result or an attribute value with `InvalidParamException`; such a value used
+  to print as "Array" with a warning or end in an `Error`. A non-callable `item` option of `checkboxList()`,
+  `radioList()` or `ul()` throws `InvalidParamException` instead of a `TypeError`. An option that must be an array
+  (`labelOptions`, `itemOptions`, `groups`, an option's attributes, the prompt's options) is ignored when it is not.
+- `ArrayHelper::index()` and `map()` reject a key or group value that is not a scalar or null with an explicit
+  `TypeError` message; a float group key is cast to an integer without PHP 8.1's precision deprecation.
+- `ArrayHelper::merge()` skips an argument that is neither an array nor an object (it used to warn), and throws
+  `InvalidParamException` when a Traversable yields a key that is neither an integer nor a string.
+- `ConsoleHelper::prompt()` no longer reads `UnsetArrayValue`/`ReplaceArrayValue` markers in its options;
+  `ConsoleHelper::streamSupportsAnsiColors()` returns false for a closed stream instead of throwing.
+- Every public method of the helpers carries exact phpdoc types (no native types were added, so callers and
+  subclasses keep working), the Yii-only documentation (`Url::to()`, CSRF, `Yii::$app`) is gone, and
+  `phpstan.neon.dist` covers the whole module at level 10. New unit tests cover `ConsoleHelper`, `Json`,
+  `LayoutXml`, `ViewModelRegistry` and the secure HTML renderer.
+
 ## [2.3.0] - 2026-11-07
 
 ### Added

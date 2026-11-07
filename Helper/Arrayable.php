@@ -7,12 +7,15 @@
 
 namespace Hryvinskyi\Base\Helper;
 
+/**
+ * An object that can describe and export its own fields as an array.
+ */
 interface Arrayable
 {
     /**
-     * Returns the list of fields that should be returned by default by [[toArray()]] when no specific fields are specified.
+     * Returns the list of fields that `toArray()` returns by default, when no specific fields are requested.
      *
-     * A field is a named element in the returned array by [[toArray()]].
+     * A field is a named element in the array returned by `toArray()`.
      *
      * This method should return an array of field names or field definitions.
      * If the former, the field name will be treated as an object property name whose value will be used
@@ -45,20 +48,20 @@ interface Arrayable
      * ];
      * ```
      *
-     * @return array the list of field names or field definitions.
+     * @return array<int|string,string|\Closure> the list of field names or field definitions.
      * @see toArray()
      */
     public function fields();
 
     /**
-     * Returns the list of additional fields that can be returned by [[toArray()]] in addition to those listed in [[fields()]].
+     * Returns the additional fields that `toArray()` can return besides those listed in `fields()`.
      *
-     * This method is similar to [[fields()]] except that the list of fields declared
-     * by this method are not returned by default by [[toArray()]]. Only when a field in the list
-     * is explicitly requested, will it be included in the result of [[toArray()]].
+     * This method is similar to `fields()` except that the list of fields declared
+     * by this method are not returned by default by `toArray()`. Only when a field in the list
+     * is explicitly requested, will it be included in the result of `toArray()`.
      *
-     * @return array the list of expandable field names or field definitions. Please refer
-     * to [[fields()]] on the format of the return value.
+     * @return array<int|string,string|\Closure> the list of expandable field names or field definitions.
+     * Please refer to `fields()` on the format of the return value.
      * @see toArray()
      * @see fields()
      */
@@ -67,13 +70,14 @@ interface Arrayable
     /**
      * Converts the object into an array.
      *
-     * @param array $fields the fields that the output array should contain. Fields not specified
-     * in [[fields()]] will be ignored. If this parameter is empty, all fields as specified in [[fields()]] will be returned.
-     * @param array $expand the additional fields that the output array should contain.
-     * Fields not specified in [[extraFields()]] will be ignored. If this parameter is empty, no extra fields
+     * @param array<array-key,string> $fields the fields that the output array should contain. Fields not
+     * specified in `fields()` will be ignored. If this parameter is empty, all fields as specified in `fields()`
+     * will be returned.
+     * @param array<array-key,string> $expand the additional fields that the output array should contain.
+     * Fields not specified in `extraFields()` will be ignored. If this parameter is empty, no extra fields
      * will be returned.
      * @param bool $recursive whether to recursively return array representation of embedded objects.
-     * @return array the array representation of the object
+     * @return array<array-key,mixed> the array representation of the object
      */
     public function toArray(array $fields = [], array $expand = [], $recursive = true);
 }

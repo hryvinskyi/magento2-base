@@ -22,6 +22,11 @@ class ViewModelCacheTags
      */
     private $viewModels = [];
 
+    /**
+     * Returns the cache tags of every view model collected so far.
+     *
+     * @return string[]
+     */
     public function get(): array
     {
         // wait with collecting the identities until they are needed to catch all of them
@@ -30,6 +35,12 @@ class ViewModelCacheTags
         }, $this->viewModels)));
     }
 
+    /**
+     * Remembers the view model when it has cache tags.
+     *
+     * @param ArgumentInterface $viewModel
+     * @return void
+     */
     public function collectFrom(ArgumentInterface $viewModel): void
     {
         if ($viewModel instanceof IdentityInterface) {

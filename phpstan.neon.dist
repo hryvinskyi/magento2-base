@@ -1,13 +1,15 @@
 parameters:
     level: 10
     paths:
-        - Api/Menu
-        - Block/Adminhtml/Menu.php
-        - Model/Menu
-        - Test/Unit/bootstrap.php
-        - Test/Unit/Block/Adminhtml
-        - Test/Unit/Model/Menu
-        - Test/Integration
+        - registration.php
+        - Api
+        - Block
+        - Helper
+        - Model
+        - Observer
+        - Plugin
+        - View
+        - Test
     bootstrapFiles:
         - ../../../vendor/autoload.php
     scanDirectories:

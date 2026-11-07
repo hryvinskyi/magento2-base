@@ -7,74 +7,113 @@
 
 namespace Hryvinskyi\Base\Test\Unit\Helpers;
 
+use Hryvinskyi\Base\Helper\Html;
+use Hryvinskyi\Base\Helper\InvalidParamException;
+use Hryvinskyi\Base\Test\Unit\Helpers\Fixture\HtmlTraversableSelection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
-use Hryvinskyi\Base\Helper\Html;
 
-class HtmlTest extends TestCase {
-
-    public function testEncode()
+class HtmlTest extends TestCase
+{
+    public function testEncode(): void
     {
         $this->assertEquals('a&lt;&gt;&amp;&quot;&#039;�', Html::encode("a<>&\"'\x80"));
         $this->assertEquals('Sam &amp; Dark', Html::encode('Sam & Dark'));
     }
 
-    public function testDecode()
+    public function testDecode(): void
     {
         $this->assertEquals("a<>&\"'", Html::decode('a&lt;&gt;&amp;&quot;&#039;'));
     }
-    public function testTag()
+
+    public function testTag(): void
     {
         $this->assertEquals('<br />', Html::tag('br'));
         $this->assertEquals('<span></span>', Html::tag('span'));
         $this->assertEquals('<div>content</div>', Html::tag('div', 'content'));
-        $this->assertEquals('<input type="text" name="test" value="&lt;&gt;" />', Html::tag('input', '', ['type' => 'text', 'name' => 'test', 'value' => '<>']));
+        $this->assertEquals(
+            '<input type="text" name="test" value="&lt;&gt;" />',
+            Html::tag('input', '', ['type' => 'text', 'name' => 'test', 'value' => '<>'])
+        );
         $this->assertEquals('<span disabled></span>', Html::tag('span', '', ['disabled' => true]));
         $this->assertEquals('test', Html::tag(false, 'test'));
         $this->assertEquals('test', Html::tag(null, 'test'));
     }
-    public function testBeginTag()
+
+    public function testBeginTag(): void
     {
         $this->assertEquals('<br>', Html::beginTag('br'));
-        $this->assertEquals('<span id="test" class="title">', Html::beginTag('span', ['id' => 'test', 'class' => 'title']));
+        $this->assertEquals(
+            '<span id="test" class="title">',
+            Html::beginTag('span', ['id' => 'test', 'class' => 'title'])
+        );
         $this->assertEquals('', Html::beginTag(null));
         $this->assertEquals('', Html::beginTag(false));
     }
-    public function testEndTag()
+
+    public function testEndTag(): void
     {
         $this->assertEquals('</br>', Html::endTag('br'));
         $this->assertEquals('</span>', Html::endTag('span'));
         $this->assertEquals('', Html::endTag(null));
         $this->assertEquals('', Html::endTag(false));
     }
-    public function testStyle()
+
+    public function testStyle(): void
     {
         $content = 'a <>';
         $this->assertEquals("<style>{$content}</style>", Html::style($content));
-        $this->assertEquals("<style type=\"text/less\">{$content}</style>", Html::style($content, ['type' => 'text/less']));
+        $this->assertEquals(
+            "<style type=\"text/less\">{$content}</style>",
+            Html::style($content, ['type' => 'text/less'])
+        );
     }
-    public function testScript()
+
+    public function testScript(): void
     {
         $content = 'a <>';
         $this->assertEquals("<script>{$content}</script>", Html::script($content));
-        $this->assertEquals("<script type=\"text/js\">{$content}</script>", Html::script($content, ['type' => 'text/js']));
+        $this->assertEquals(
+            "<script type=\"text/js\">{$content}</script>",
+            Html::script($content, ['type' => 'text/js'])
+        );
     }
-    public function testCssFile()
+
+    public function testCssFile(): void
     {
-        $this->assertEquals('<link href="http://example.com" rel="stylesheet" />', Html::cssFile('http://example.com'));
+        $link = '<link href="http://example.com" rel="stylesheet" />';
+        $this->assertEquals($link, Html::cssFile('http://example.com'));
         $this->assertEquals('<link href="/test" rel="stylesheet" />', Html::cssFile('/test'));
-        $this->assertEquals("<!--[if IE 9]>\n" . '<link href="http://example.com" rel="stylesheet" />' . "\n<![endif]-->", Html::cssFile('http://example.com', ['condition' => 'IE 9']));
-        $this->assertEquals("<!--[if (gte IE 9)|(!IE)]><!-->\n" . '<link href="http://example.com" rel="stylesheet" />' . "\n<!--<![endif]-->", Html::cssFile('http://example.com', ['condition' => '(gte IE 9)|(!IE)']));
-        $this->assertEquals('<noscript><link href="http://example.com" rel="stylesheet" /></noscript>', Html::cssFile('http://example.com', ['noscript' => true]));
+        $this->assertEquals(
+            "<!--[if IE 9]>\n" . $link . "\n<![endif]-->",
+            Html::cssFile('http://example.com', ['condition' => 'IE 9'])
+        );
+        $this->assertEquals(
+            "<!--[if (gte IE 9)|(!IE)]><!-->\n" . $link . "\n<!--<![endif]-->",
+            Html::cssFile('http://example.com', ['condition' => '(gte IE 9)|(!IE)'])
+        );
+        $this->assertEquals(
+            '<noscript>' . $link . '</noscript>',
+            Html::cssFile('http://example.com', ['noscript' => true])
+        );
     }
-    public function testJsFile()
+
+    public function testJsFile(): void
     {
-        $this->assertEquals('<script src="http://example.com"></script>', Html::jsFile('http://example.com'));
+        $script = '<script src="http://example.com"></script>';
+        $this->assertEquals($script, Html::jsFile('http://example.com'));
         $this->assertEquals('<script src="/test"></script>', Html::jsFile('/test'));
-        $this->assertEquals("<!--[if IE 9]>\n" . '<script src="http://example.com"></script>' . "\n<![endif]-->", Html::jsFile('http://example.com', ['condition' => 'IE 9']));
-        $this->assertEquals("<!--[if (gte IE 9)|(!IE)]><!-->\n" . '<script src="http://example.com"></script>' . "\n<!--<![endif]-->", Html::jsFile('http://example.com', ['condition' => '(gte IE 9)|(!IE)']));
+        $this->assertEquals(
+            "<!--[if IE 9]>\n" . $script . "\n<![endif]-->",
+            Html::jsFile('http://example.com', ['condition' => 'IE 9'])
+        );
+        $this->assertEquals(
+            "<!--[if (gte IE 9)|(!IE)]><!-->\n" . $script . "\n<!--<![endif]-->",
+            Html::jsFile('http://example.com', ['condition' => '(gte IE 9)|(!IE)'])
+        );
     }
+
     /**
      * @param string $expected
      * @param string $method
@@ -84,8 +123,10 @@ class HtmlTest extends TestCase {
     {
         $this->assertSame($expected, Html::beginForm('/foo', $method));
     }
+
     /**
-     * Data provider for [[testBeginFormPrintsTheMethodAsGiven()]].
+     * Data provider for testBeginFormPrintsTheMethodAsGiven().
+     *
      * @return list<array{string, string}> test data
      */
     public static function dataProviderBeginFormMethod(): array
@@ -97,7 +138,8 @@ class HtmlTest extends TestCase {
             ['<form action="/foo" method="post">', 'post'],
         ];
     }
-    public function testBeginForm()
+
+    public function testBeginForm(): void
     {
         $this->assertEquals('<form action="" method="post">', Html::beginForm());
         $this->assertEquals('<form action="/example" method="get">', Html::beginForm('/example', 'get'));
@@ -105,11 +147,15 @@ class HtmlTest extends TestCase {
             '<input type="hidden" name="id" value="1" />',
             '<input type="hidden" name="title" value="&lt;" />',
         ];
-        $this->assertEquals('<form action="/example" method="get">' . "\n" . implode("\n", $hiddens), Html::beginForm('/example?id=1&title=%3C', 'get'));
+        $this->assertEquals(
+            '<form action="/example" method="get">' . "\n" . implode("\n", $hiddens),
+            Html::beginForm('/example?id=1&title=%3C', 'get')
+        );
         $expected = '<form action="/foo" method="GET">%A<input type="hidden" name="p" value="" />';
         $actual = Html::beginForm('/foo?p', 'GET');
         $this->assertStringMatchesFormat($expected, $actual);
     }
+
     public function testBeginFormAddsTheFormKey(): void
     {
         $this->assertSame(
@@ -118,26 +164,34 @@ class HtmlTest extends TestCase {
         );
     }
 
-    public function testEndForm()
+    public function testEndForm(): void
     {
         $this->assertEquals('</form>', Html::endForm());
     }
-    public function testA()
+
+    public function testA(): void
     {
         $this->assertEquals('<a>something<></a>', Html::a('something<>'));
         $this->assertEquals('<a href="/example">something</a>', Html::a('something', '/example'));
         $this->assertEquals('<a href="">something</a>', Html::a('something', ''));
-        $this->assertEquals('<a href="http://www.быстроном.рф">http://www.быстроном.рф</a>', Html::a('http://www.быстроном.рф', 'http://www.быстроном.рф'));
+        $this->assertEquals(
+            '<a href="http://www.быстроном.рф">http://www.быстроном.рф</a>',
+            Html::a('http://www.быстроном.рф', 'http://www.быстроном.рф')
+        );
     }
-    public function testMailto()
+
+    public function testMailto(): void
     {
         $this->assertEquals('<a href="mailto:test&lt;&gt;">test<></a>', Html::mailto('test<>'));
         $this->assertEquals('<a href="mailto:test&gt;">test<></a>', Html::mailto('test<>', 'test>'));
     }
+
     /**
-     * @return array
+     * Data provider for testImg().
+     *
+     * @return list<array{string, string, array<string, mixed>}>
      */
-    public static function imgDataProvider()
+    public static function imgDataProvider(): array
     {
         return [
             [
@@ -187,7 +241,8 @@ class HtmlTest extends TestCase {
                 ],
             ],
             [
-                '<img src="/base-url" srcset="/example-1x 1x,/example-2x 2x,/example-3x 3x,/example-4x 4x,/example-5x 5x" alt="" />',
+                '<img src="/base-url" srcset="/example-1x 1x,/example-2x 2x,/example-3x 3x,/example-4x 4x,'
+                    . '/example-5x 5x" alt="" />',
                 '/base-url',
                 [
                     'srcset' => [
@@ -200,7 +255,8 @@ class HtmlTest extends TestCase {
                 ],
             ],
             [
-                '<img src="/base-url" srcset="/example-1.42x 1.42x,/example-2.0x 2.0x,/example-3.99999x 3.99999x" alt="" />',
+                '<img src="/base-url" srcset="/example-1.42x 1.42x,/example-2.0x 2.0x,'
+                    . '/example-3.99999x 3.99999x" alt="" />',
                 '/base-url',
                 [
                     'srcset' => [
@@ -219,82 +275,137 @@ class HtmlTest extends TestCase {
             ],
         ];
     }
+
     /**
      * @param string $expected
      * @param string $src
-     * @param array $options
+     * @param array<string, mixed> $options
      */
     #[DataProvider('imgDataProvider')]
-    public function testImg($expected, $src, $options)
+    public function testImg(string $expected, string $src, array $options): void
     {
         $this->assertEquals($expected, Html::img($src, $options));
     }
-    public function testLabel()
+
+    public function testLabel(): void
     {
         $this->assertEquals('<label>something<></label>', Html::label('something<>'));
         $this->assertEquals('<label for="a">something<></label>', Html::label('something<>', 'a'));
-        $this->assertEquals('<label class="test" for="a">something<></label>', Html::label('something<>', 'a', ['class' => 'test']));
+        $this->assertEquals(
+            '<label class="test" for="a">something<></label>',
+            Html::label('something<>', 'a', ['class' => 'test'])
+        );
     }
-    public function testButton()
+
+    public function testButton(): void
     {
         $this->assertEquals('<button type="button">Button</button>', Html::button());
-        $this->assertEquals('<button type="button" name="test" value="value">content<></button>', Html::button('content<>', ['name' => 'test', 'value' => 'value']));
-        $this->assertEquals('<button type="submit" class="t" name="test" value="value">content<></button>', Html::button('content<>', ['type' => 'submit', 'name' => 'test', 'value' => 'value', 'class' => 't']));
+        $this->assertEquals(
+            '<button type="button" name="test" value="value">content<></button>',
+            Html::button('content<>', ['name' => 'test', 'value' => 'value'])
+        );
+        $this->assertEquals(
+            '<button type="submit" class="t" name="test" value="value">content<></button>',
+            Html::button('content<>', ['type' => 'submit', 'name' => 'test', 'value' => 'value', 'class' => 't'])
+        );
     }
-    public function testSubmitButton()
+
+    public function testSubmitButton(): void
     {
         $this->assertEquals('<button type="submit">Submit</button>', Html::submitButton());
-        $this->assertEquals('<button type="submit" class="t" name="test" value="value">content<></button>', Html::submitButton('content<>', ['name' => 'test', 'value' => 'value', 'class' => 't']));
+        $this->assertEquals(
+            '<button type="submit" class="t" name="test" value="value">content<></button>',
+            Html::submitButton('content<>', ['name' => 'test', 'value' => 'value', 'class' => 't'])
+        );
     }
-    public function testResetButton()
+
+    public function testResetButton(): void
     {
         $this->assertEquals('<button type="reset">Reset</button>', Html::resetButton());
-        $this->assertEquals('<button type="reset" class="t" name="test" value="value">content<></button>', Html::resetButton('content<>', ['name' => 'test', 'value' => 'value', 'class' => 't']));
+        $this->assertEquals(
+            '<button type="reset" class="t" name="test" value="value">content<></button>',
+            Html::resetButton('content<>', ['name' => 'test', 'value' => 'value', 'class' => 't'])
+        );
     }
-    public function testInput()
+
+    public function testInput(): void
     {
         $this->assertEquals('<input type="text" />', Html::input('text'));
-        $this->assertEquals('<input type="text" class="t" name="test" value="value" />', Html::input('text', 'test', 'value', ['class' => 't']));
+        $this->assertEquals(
+            '<input type="text" class="t" name="test" value="value" />',
+            Html::input('text', 'test', 'value', ['class' => 't'])
+        );
     }
-    public function testButtonInput()
+
+    public function testButtonInput(): void
     {
         $this->assertEquals('<input type="button" value="Button" />', Html::buttonInput());
-        $this->assertEquals('<input type="button" class="a" name="test" value="text" />', Html::buttonInput('text', ['name' => 'test', 'class' => 'a']));
+        $this->assertEquals(
+            '<input type="button" class="a" name="test" value="text" />',
+            Html::buttonInput('text', ['name' => 'test', 'class' => 'a'])
+        );
     }
-    public function testSubmitInput()
+
+    public function testSubmitInput(): void
     {
         $this->assertEquals('<input type="submit" value="Submit" />', Html::submitInput());
-        $this->assertEquals('<input type="submit" class="a" name="test" value="text" />', Html::submitInput('text', ['name' => 'test', 'class' => 'a']));
+        $this->assertEquals(
+            '<input type="submit" class="a" name="test" value="text" />',
+            Html::submitInput('text', ['name' => 'test', 'class' => 'a'])
+        );
     }
-    public function testResetInput()
+
+    public function testResetInput(): void
     {
         $this->assertEquals('<input type="reset" value="Reset" />', Html::resetInput());
-        $this->assertEquals('<input type="reset" class="a" name="test" value="text" />', Html::resetInput('text', ['name' => 'test', 'class' => 'a']));
+        $this->assertEquals(
+            '<input type="reset" class="a" name="test" value="text" />',
+            Html::resetInput('text', ['name' => 'test', 'class' => 'a'])
+        );
     }
-    public function testTextInput()
+
+    public function testTextInput(): void
     {
         $this->assertEquals('<input type="text" name="test" />', Html::textInput('test'));
-        $this->assertEquals('<input type="text" class="t" name="test" value="value" />', Html::textInput('test', 'value', ['class' => 't']));
+        $this->assertEquals(
+            '<input type="text" class="t" name="test" value="value" />',
+            Html::textInput('test', 'value', ['class' => 't'])
+        );
     }
-    public function testHiddenInput()
+
+    public function testHiddenInput(): void
     {
         $this->assertEquals('<input type="hidden" name="test" />', Html::hiddenInput('test'));
-        $this->assertEquals('<input type="hidden" class="t" name="test" value="value" />', Html::hiddenInput('test', 'value', ['class' => 't']));
+        $this->assertEquals(
+            '<input type="hidden" class="t" name="test" value="value" />',
+            Html::hiddenInput('test', 'value', ['class' => 't'])
+        );
     }
-    public function testPasswordInput()
+
+    public function testPasswordInput(): void
     {
         $this->assertEquals('<input type="password" name="test" />', Html::passwordInput('test'));
-        $this->assertEquals('<input type="password" class="t" name="test" value="value" />', Html::passwordInput('test', 'value', ['class' => 't']));
+        $this->assertEquals(
+            '<input type="password" class="t" name="test" value="value" />',
+            Html::passwordInput('test', 'value', ['class' => 't'])
+        );
     }
-    public function testFileInput()
+
+    public function testFileInput(): void
     {
         $this->assertEquals('<input type="file" name="test" />', Html::fileInput('test'));
-        $this->assertEquals('<input type="file" class="t" name="test" value="value" />', Html::fileInput('test', 'value', ['class' => 't']));
+        $this->assertEquals(
+            '<input type="file" class="t" name="test" value="value" />',
+            Html::fileInput('test', 'value', ['class' => 't'])
+        );
     }
+
     /**
-     * @return array
+     * Data provider for testTextarea().
+     *
+     * @return list<array{string, string, string|null, array<string, mixed>}>
      */
-    public static function textareaDataProvider()
+    public static function textareaDataProvider(): array
     {
         return [
             [
@@ -323,61 +434,98 @@ class HtmlTest extends TestCase {
             ],
         ];
     }
+
     /**
      * @param string $expected
      * @param string $name
-     * @param string $value
-     * @param array $options
+     * @param string|null $value
+     * @param array<string, mixed> $options
      */
     #[DataProvider('textareaDataProvider')]
-    public function testTextarea($expected, $name, $value, $options)
+    public function testTextarea(string $expected, string $name, ?string $value, array $options): void
     {
         $this->assertEquals($expected, Html::textarea($name, $value, $options));
     }
-    public function testRadio()
+
+    public function testRadio(): void
     {
         $this->assertEquals('<input type="radio" name="test" value="1" />', Html::radio('test'));
-        $this->assertEquals('<input type="radio" class="a" name="test" checked />', Html::radio('test', true, ['class' => 'a', 'value' => null]));
-        $this->assertEquals('<input type="hidden" name="test" value="0" /><input type="radio" class="a" name="test" value="2" checked />', Html::radio('test', true, ['class' => 'a', 'uncheck' => '0', 'value' => 2]));
-        $this->assertEquals('<label class="bbb"><input type="radio" class="a" name="test" checked /> ccc</label>', Html::radio('test', true, [
-            'class' => 'a',
-            'value' => null,
-            'label' => 'ccc',
-            'labelOptions' => ['class' => 'bbb'],
-        ]));
-        $this->assertEquals('<input type="hidden" name="test" value="0" /><label><input type="radio" class="a" name="test" value="2" checked /> ccc</label>', Html::radio('test', true, [
-            'class' => 'a',
-            'uncheck' => '0',
-            'label' => 'ccc',
-            'value' => 2,
-        ]));
+        $this->assertEquals(
+            '<input type="radio" class="a" name="test" checked />',
+            Html::radio('test', true, ['class' => 'a', 'value' => null])
+        );
+        $this->assertEquals(
+            '<input type="hidden" name="test" value="0" />'
+                . '<input type="radio" class="a" name="test" value="2" checked />',
+            Html::radio('test', true, ['class' => 'a', 'uncheck' => '0', 'value' => 2])
+        );
+        $this->assertEquals(
+            '<label class="bbb"><input type="radio" class="a" name="test" checked /> ccc</label>',
+            Html::radio('test', true, [
+                'class' => 'a',
+                'value' => null,
+                'label' => 'ccc',
+                'labelOptions' => ['class' => 'bbb'],
+            ])
+        );
+        $this->assertEquals(
+            '<input type="hidden" name="test" value="0" />'
+                . '<label><input type="radio" class="a" name="test" value="2" checked /> ccc</label>',
+            Html::radio('test', true, [
+                'class' => 'a',
+                'uncheck' => '0',
+                'label' => 'ccc',
+                'value' => 2,
+            ])
+        );
     }
-    public function testCheckbox()
+
+    public function testCheckbox(): void
     {
         $this->assertEquals('<input type="checkbox" name="test" value="1" />', Html::checkbox('test'));
-        $this->assertEquals('<input type="checkbox" class="a" name="test" checked />', Html::checkbox('test', true, ['class' => 'a', 'value' => null]));
-        $this->assertEquals('<input type="hidden" name="test" value="0" /><input type="checkbox" class="a" name="test" value="2" checked />', Html::checkbox('test', true, ['class' => 'a', 'uncheck' => '0', 'value' => 2]));
-        $this->assertEquals('<label class="bbb"><input type="checkbox" class="a" name="test" checked /> ccc</label>', Html::checkbox('test', true, [
-            'class' => 'a',
-            'value' => null,
-            'label' => 'ccc',
-            'labelOptions' => ['class' => 'bbb'],
-        ]));
-        $this->assertEquals('<input type="hidden" name="test" value="0" /><label><input type="checkbox" class="a" name="test" value="2" checked /> ccc</label>', Html::checkbox('test', true, [
-            'class' => 'a',
-            'uncheck' => '0',
-            'label' => 'ccc',
-            'value' => 2,
-        ]));
-        $this->assertEquals('<input type="hidden" name="test" value="0" form="test-form" /><label><input type="checkbox" class="a" name="test" value="2" form="test-form" checked /> ccc</label>', Html::checkbox('test', true, [
-            'class' => 'a',
-            'uncheck' => '0',
-            'label' => 'ccc',
-            'value' => 2,
-            'form' => 'test-form',
-        ]));
+        $this->assertEquals(
+            '<input type="checkbox" class="a" name="test" checked />',
+            Html::checkbox('test', true, ['class' => 'a', 'value' => null])
+        );
+        $this->assertEquals(
+            '<input type="hidden" name="test" value="0" />'
+                . '<input type="checkbox" class="a" name="test" value="2" checked />',
+            Html::checkbox('test', true, ['class' => 'a', 'uncheck' => '0', 'value' => 2])
+        );
+        $this->assertEquals(
+            '<label class="bbb"><input type="checkbox" class="a" name="test" checked /> ccc</label>',
+            Html::checkbox('test', true, [
+                'class' => 'a',
+                'value' => null,
+                'label' => 'ccc',
+                'labelOptions' => ['class' => 'bbb'],
+            ])
+        );
+        $this->assertEquals(
+            '<input type="hidden" name="test" value="0" />'
+                . '<label><input type="checkbox" class="a" name="test" value="2" checked /> ccc</label>',
+            Html::checkbox('test', true, [
+                'class' => 'a',
+                'uncheck' => '0',
+                'label' => 'ccc',
+                'value' => 2,
+            ])
+        );
+        $this->assertEquals(
+            '<input type="hidden" name="test" value="0" form="test-form" />'
+                . '<label><input type="checkbox" class="a" name="test" value="2" form="test-form" checked />'
+                . ' ccc</label>',
+            Html::checkbox('test', true, [
+                'class' => 'a',
+                'uncheck' => '0',
+                'label' => 'ccc',
+                'value' => 2,
+                'form' => 'test-form',
+            ])
+        );
     }
-    public function testDropDownList()
+
+    public function testDropDownList(): void
     {
         $expected = <<<'EOD'
 <select name="test">
@@ -417,7 +565,8 @@ EOD;
 EOD;
         $this->assertEqualsWithoutLE($expected, Html::dropDownList('test', null, [], ['multiple' => 'true']));
     }
-    public function testListBox()
+
+    public function testListBox(): void
     {
         $expected = <<<'EOD'
 <select name="test" size="4">
@@ -445,21 +594,30 @@ EOD;
 <option value="value  2">text&nbsp;&nbsp;2</option>
 </select>
 EOD;
-        $this->assertEqualsWithoutLE($expected, Html::listBox('test', null, $this->getDataItems2(), ['encodeSpaces' => true]));
+        $this->assertEqualsWithoutLE(
+            $expected,
+            Html::listBox('test', null, $this->getDataItems2(), ['encodeSpaces' => true])
+        );
         $expected = <<<'EOD'
 <select name="test" size="4">
 <option value="value1&lt;&gt;">text1<></option>
 <option value="value  2">text  2</option>
 </select>
 EOD;
-        $this->assertEqualsWithoutLE($expected, Html::listBox('test', null, $this->getDataItems2(), ['encode' => false]));
+        $this->assertEqualsWithoutLE(
+            $expected,
+            Html::listBox('test', null, $this->getDataItems2(), ['encode' => false])
+        );
         $expected = <<<'EOD'
 <select name="test" size="4">
 <option value="value1&lt;&gt;">text1<></option>
 <option value="value  2">text&nbsp;&nbsp;2</option>
 </select>
 EOD;
-        $this->assertEqualsWithoutLE($expected, Html::listBox('test', null, $this->getDataItems2(), ['encodeSpaces' => true, 'encode' => false]));
+        $this->assertEqualsWithoutLE(
+            $expected,
+            Html::listBox('test', null, $this->getDataItems2(), ['encodeSpaces' => true, 'encode' => false])
+        );
         $expected = <<<'EOD'
 <select name="test" size="4">
 <option value="value1">text1</option>
@@ -493,9 +651,13 @@ EOD;
 <option value="value2" selected>text2</option>
 </select>
 EOD;
-        $this->assertEqualsWithoutLE($expected, Html::listBox('test', new \ArrayObject(['value1', 'value2']), $this->getDataItems()));
+        $this->assertEqualsWithoutLE(
+            $expected,
+            Html::listBox('test', new HtmlTraversableSelection(['value1', 'value2']), $this->getDataItems())
+        );
     }
-    public function testCheckboxList()
+
+    public function testCheckboxList(): void
     {
         $this->assertEquals('<div></div>', Html::checkboxList('test'));
         $expected = <<<'EOD'
@@ -509,10 +671,9 @@ EOD;
 <label><input type="checkbox" name="test[]" value="value  2" /> text  2</label></div>
 EOD;
         $this->assertEqualsWithoutLE($expected, Html::checkboxList('test', ['value2'], $this->getDataItems2()));
-        $expected = <<<'EOD'
-<input type="hidden" name="test" value="0" /><div><label><input type="checkbox" name="test[]" value="value1" /> text1</label><br />
-<label><input type="checkbox" name="test[]" value="value2" checked /> text2</label></div>
-EOD;
+        $expected = '<input type="hidden" name="test" value="0" />'
+            . '<div><label><input type="checkbox" name="test[]" value="value1" /> text1</label><br />' . "\n"
+            . '<label><input type="checkbox" name="test[]" value="value2" checked /> text2</label></div>';
         $this->assertEqualsWithoutLE($expected, Html::checkboxList('test', ['value2'], $this->getDataItems(), [
             'separator' => "<br />\n",
             'unselect' => '0',
@@ -522,28 +683,30 @@ EOD;
 1<label>text2 <input type="checkbox" name="test[]" value="value2" checked /></label></div>
 EOD;
         $this->assertEqualsWithoutLE($expected, Html::checkboxList('test', ['value2'], $this->getDataItems(), [
-            'item' => function ($index, $label, $name, $checked, $value) {
-                return $index . Html::label($label . ' ' . Html::checkbox($name, $checked, ['value' => $value]));
-            },
+            'item' => $this->checkboxItemFormatter(),
         ]));
         $expected = <<<'EOD'
 0<label>text1 <input type="checkbox" name="test[]" value="value1" /></label>
 1<label>text2 <input type="checkbox" name="test[]" value="value2" checked /></label>
 EOD;
         $this->assertEqualsWithoutLE($expected, Html::checkboxList('test', ['value2'], $this->getDataItems(), [
-            'item' => function ($index, $label, $name, $checked, $value) {
-                return $index . Html::label($label . ' ' . Html::checkbox($name, $checked, ['value' => $value]));
-            },
+            'item' => $this->checkboxItemFormatter(),
             'tag' => false,
         ]));
-        $this->assertEqualsWithoutLE($expected, Html::checkboxList('test', new \ArrayObject(['value2']), $this->getDataItems(), [
-            'item' => function ($index, $label, $name, $checked, $value) {
-                return $index . Html::label($label . ' ' . Html::checkbox($name, $checked, ['value' => $value]));
-            },
+        $selection = new HtmlTraversableSelection(['value2']);
+        $this->assertEqualsWithoutLE($expected, Html::checkboxList('test', $selection, $this->getDataItems(), [
+            'item' => $this->checkboxItemFormatter(),
             'tag' => false,
         ]));
     }
-    public function testRadioList()
+
+    public function testCheckboxListRejectsAnItemOptionThatIsNotCallable(): void
+    {
+        $this->expectException(InvalidParamException::class);
+        Html::checkboxList('test', null, $this->getDataItems(), ['item' => 'not a callable']);
+    }
+
+    public function testRadioList(): void
     {
         $this->assertEquals('<div></div>', Html::radioList('test'));
         $expected = <<<'EOD'
@@ -556,10 +719,9 @@ EOD;
 <label><input type="radio" name="test" value="value  2" /> text  2</label></div>
 EOD;
         $this->assertEqualsWithoutLE($expected, Html::radioList('test', ['value2'], $this->getDataItems2()));
-        $expected = <<<'EOD'
-<input type="hidden" name="test" value="0" /><div><label><input type="radio" name="test" value="value1" /> text1</label><br />
-<label><input type="radio" name="test" value="value2" checked /> text2</label></div>
-EOD;
+        $expected = '<input type="hidden" name="test" value="0" />'
+            . '<div><label><input type="radio" name="test" value="value1" /> text1</label><br />' . "\n"
+            . '<label><input type="radio" name="test" value="value2" checked /> text2</label></div>';
         $this->assertEqualsWithoutLE($expected, Html::radioList('test', ['value2'], $this->getDataItems(), [
             'separator' => "<br />\n",
             'unselect' => '0',
@@ -569,28 +731,24 @@ EOD;
 1<label>text2 <input type="radio" name="test" value="value2" checked /></label></div>
 EOD;
         $this->assertEqualsWithoutLE($expected, Html::radioList('test', ['value2'], $this->getDataItems(), [
-            'item' => function ($index, $label, $name, $checked, $value) {
-                return $index . Html::label($label . ' ' . Html::radio($name, $checked, ['value' => $value]));
-            },
+            'item' => $this->radioItemFormatter(),
         ]));
         $expected = <<<'EOD'
 0<label>text1 <input type="radio" name="test" value="value1" /></label>
 1<label>text2 <input type="radio" name="test" value="value2" checked /></label>
 EOD;
         $this->assertEqualsWithoutLE($expected, Html::radioList('test', ['value2'], $this->getDataItems(), [
-            'item' => function ($index, $label, $name, $checked, $value) {
-                return $index . Html::label($label . ' ' . Html::radio($name, $checked, ['value' => $value]));
-            },
+            'item' => $this->radioItemFormatter(),
             'tag' => false,
         ]));
-        $this->assertEqualsWithoutLE($expected, Html::radioList('test', new \ArrayObject(['value2']), $this->getDataItems(), [
-            'item' => function ($index, $label, $name, $checked, $value) {
-                return $index . Html::label($label . ' ' . Html::radio($name, $checked, ['value' => $value]));
-            },
+        $selection = new HtmlTraversableSelection(['value2']);
+        $this->assertEqualsWithoutLE($expected, Html::radioList('test', $selection, $this->getDataItems(), [
+            'item' => $this->radioItemFormatter(),
             'tag' => false,
         ]));
     }
-    public function testUl()
+
+    public function testUl(): void
     {
         $data = [
             1, 'abc', '<>',
@@ -612,14 +770,19 @@ EOD;
 EOD;
         $this->assertEqualsWithoutLE($expected, Html::ul($data, [
             'class' => 'test',
-            'item' => function ($item, $index) {
-                return "<li class=\"item-$index\">$item</li>";
-            },
+            'item' => $this->listItemFormatter(),
         ]));
         $this->assertEquals('<ul class="test"></ul>', Html::ul([], ['class' => 'test']));
         $this->assertStringMatchesFormat('<foo>%A</foo>', Html::ul([], ['tag' => 'foo']));
     }
-    public function testOl()
+
+    public function testUlRejectsAnItemThatCannotBeRenderedAsText(): void
+    {
+        $this->expectException(InvalidParamException::class);
+        Html::ul([['nested']]);
+    }
+
+    public function testOl(): void
     {
         $data = [
             1, 'abc', '<>',
@@ -643,13 +806,12 @@ EOD;
 EOD;
         $this->assertEqualsWithoutLE($expected, Html::ol($data, [
             'class' => 'test',
-            'item' => function ($item, $index) {
-                return "<li class=\"item-$index\">$item</li>";
-            },
+            'item' => $this->listItemFormatter(),
         ]));
         $this->assertEquals('<ol class="test"></ol>', Html::ol([], ['class' => 'test']));
     }
-    public function testRenderOptions()
+
+    public function testRenderOptions(): void
     {
         $data = [
             'value1' => 'label1',
@@ -690,7 +852,10 @@ EOD;
             ],
             'encodeSpaces' => true,
         ];
-        $this->assertEqualsWithoutLE($expected, Html::renderSelectOptions(['value111', 'value1'], $data, $attributes));
+        $this->assertEqualsWithoutLE(
+            $expected,
+            Html::renderSelectOptions(['value111', 'value1'], $data, $attributes)
+        );
         $attributes = [
             'prompt' => 'please select<>',
             'options' => [
@@ -700,7 +865,10 @@ EOD;
                 'group12' => ['class' => 'group'],
             ],
         ];
-        $this->assertEqualsWithoutLE(str_replace('&nbsp;', ' ', $expected), Html::renderSelectOptions(['value111', 'value1'], $data, $attributes));
+        $this->assertEqualsWithoutLE(
+            str_replace('&nbsp;', ' ', $expected),
+            Html::renderSelectOptions(['value111', 'value1'], $data, $attributes)
+        );
         // Attributes for prompt (https://github.com/yiisoft/yii2/issues/7420)
         $data = [
             'value1' => 'label1',
@@ -718,14 +886,24 @@ EOD;
         ];
         $this->assertEqualsWithoutLE($expected, Html::renderSelectOptions(['value1'], $data, $attributes));
     }
-    public function testRenderAttributes()
+
+    public function testRenderAttributes(): void
     {
         $this->assertEquals('', Html::renderTagAttributes([]));
-        $this->assertEquals(' name="test" value="1&lt;&gt;"', Html::renderTagAttributes(['name' => 'test', 'empty' => null, 'value' => '1<>']));
-        $this->assertEquals(' checked disabled', Html::renderTagAttributes(['checked' => true, 'disabled' => true, 'hidden' => false]));
+        $this->assertEquals(
+            ' name="test" value="1&lt;&gt;"',
+            Html::renderTagAttributes(['name' => 'test', 'empty' => null, 'value' => '1<>'])
+        );
+        $this->assertEquals(
+            ' checked disabled',
+            Html::renderTagAttributes(['checked' => true, 'disabled' => true, 'hidden' => false])
+        );
         $this->assertEquals(' class="first second"', Html::renderTagAttributes(['class' => ['first', 'second']]));
         $this->assertEquals('', Html::renderTagAttributes(['class' => []]));
-        $this->assertEquals(' style="width: 100px; height: 200px;"', Html::renderTagAttributes(['style' => ['width' => '100px', 'height' => '200px']]));
+        $this->assertEquals(
+            ' style="width: 100px; height: 200px;"',
+            Html::renderTagAttributes(['style' => ['width' => '100px', 'height' => '200px']])
+        );
         $this->assertEquals('', Html::renderTagAttributes(['style' => []]));
         $attributes = [
             'data' => [
@@ -734,7 +912,8 @@ EOD;
         ];
         $this->assertEquals(' data-foo=\'[]\'', Html::renderTagAttributes($attributes));
     }
-    public function testAddCssClass()
+
+    public function testAddCssClass(): void
     {
         $options = [];
         Html::addCssClass($options, 'test');
@@ -766,8 +945,9 @@ EOD;
         Html::addCssClass($options, ['test1', 'test2']);
         $this->assertEquals(['class' => 'test test1 test2'], $options);
     }
+
     #[Depends('testAddCssClass')]
-    public function testMergeCssClass()
+    public function testMergeCssClass(): void
     {
         $options = [
             'class' => [
@@ -779,7 +959,8 @@ EOD;
         Html::addCssClass($options, ['additional' => 'test2']);
         $this->assertEquals(['persistent' => 'test1', 'additional' => 'test2'], $options['class']);
     }
-    public function testRemoveCssClass()
+
+    public function testRemoveCssClass(): void
     {
         $options = ['class' => 'test test2 test3'];
         Html::removeCssClass($options, 'test2');
@@ -802,7 +983,8 @@ EOD;
         Html::removeCssClass($options, ['test1', 'test2']);
         $this->assertEquals(['class' => 'test'], $options);
     }
-    public function testCssStyleFromArray()
+
+    public function testCssStyleFromArray(): void
     {
         $this->assertEquals('width: 100px; height: 200px;', Html::cssStyleFromArray([
             'width' => '100px',
@@ -810,7 +992,8 @@ EOD;
         ]));
         $this->assertNull(Html::cssStyleFromArray([]));
     }
-    public function testCssStyleToArray()
+
+    public function testCssStyleToArray(): void
     {
         $this->assertEquals([
             'width' => '100px',
@@ -818,7 +1001,8 @@ EOD;
         ], Html::cssStyleToArray('width: 100px; height: 200px;'));
         $this->assertEquals([], Html::cssStyleToArray('  '));
     }
-    public function testAddCssStyle()
+
+    public function testAddCssStyle(): void
     {
         $options = ['style' => 'width: 100px; height: 200px;'];
         Html::addCssStyle($options, 'width: 110px; color: red;');
@@ -843,7 +1027,8 @@ EOD;
         Html::addCssStyle($options, ['color' => 'red'], false);
         $this->assertEquals('width: 100px; color: red;', $options['style']);
     }
-    public function testRemoveCssStyle()
+
+    public function testRemoveCssStyle(): void
     {
         $options = ['style' => 'width: 110px; height: 200px; color: red;'];
         Html::removeCssStyle($options, 'width');
@@ -854,7 +1039,7 @@ EOD;
         $this->assertNull($options['style']);
         $options = [];
         Html::removeCssStyle($options, ['color', 'background']);
-        $this->assertNotTrue(array_key_exists('style', $options));
+        $this->assertArrayNotHasKey('style', $options);
         $options = [
             'style' => [
                 'color' => 'red',
@@ -864,38 +1049,49 @@ EOD;
         Html::removeCssStyle($options, ['color']);
         $this->assertEquals('width: 100px;', $options['style']);
     }
-    public function testBooleanAttributes()
+
+    public function testBooleanAttributes(): void
     {
-        $this->assertEquals('<input type="email" name="mail" />', Html::input('email', 'mail', null, ['required' => false]));
-        $this->assertEquals('<input type="email" name="mail" required />', Html::input('email', 'mail', null, ['required' => true]));
-        $this->assertEquals('<input type="email" name="mail" required="hi" />', Html::input('email', 'mail', null, ['required' => 'hi']));
+        $this->assertEquals(
+            '<input type="email" name="mail" />',
+            Html::input('email', 'mail', null, ['required' => false])
+        );
+        $this->assertEquals(
+            '<input type="email" name="mail" required />',
+            Html::input('email', 'mail', null, ['required' => true])
+        );
+        $this->assertEquals(
+            '<input type="email" name="mail" required="hi" />',
+            Html::input('email', 'mail', null, ['required' => 'hi'])
+        );
     }
-    public function testDataAttributes()
+
+    public function testDataAttributes(): void
     {
-        $this->assertEquals('<link src="xyz" data-a="1" data-b="c" />', Html::tag('link', '', ['src' => 'xyz', 'data' => ['a' => 1, 'b' => 'c']]));
-        $this->assertEquals('<link src="xyz" ng-a="1" ng-b="c" />', Html::tag('link', '', ['src' => 'xyz', 'ng' => ['a' => 1, 'b' => 'c']]));
-        $this->assertEquals('<link src="xyz" data-ng-a="1" data-ng-b="c" />', Html::tag('link', '', ['src' => 'xyz', 'data-ng' => ['a' => 1, 'b' => 'c']]));
-        $this->assertEquals('<link src=\'{"a":1,"b":"It\\u0027s"}\' />', Html::tag('link', '', ['src' => ['a' => 1, 'b' => "It's"]]));
+        $this->assertEquals(
+            '<link src="xyz" data-a="1" data-b="c" />',
+            Html::tag('link', '', ['src' => 'xyz', 'data' => ['a' => 1, 'b' => 'c']])
+        );
+        $this->assertEquals(
+            '<link src="xyz" ng-a="1" ng-b="c" />',
+            Html::tag('link', '', ['src' => 'xyz', 'ng' => ['a' => 1, 'b' => 'c']])
+        );
+        $this->assertEquals(
+            '<link src="xyz" data-ng-a="1" data-ng-b="c" />',
+            Html::tag('link', '', ['src' => 'xyz', 'data-ng' => ['a' => 1, 'b' => 'c']])
+        );
+        $this->assertEquals(
+            '<link src=\'{"a":1,"b":"It\\u0027s"}\' />',
+            Html::tag('link', '', ['src' => ['a' => 1, 'b' => "It's"]])
+        );
     }
-    protected function getDataItems()
-    {
-        return [
-            'value1' => 'text1',
-            'value2' => 'text2',
-        ];
-    }
-    protected function getDataItems2()
-    {
-        return [
-            'value1<>' => 'text1<>',
-            'value  2' => 'text  2',
-        ];
-    }
+
     /**
-     * Data provider for [[testAttributeNameValidation()]].
-     * @return array test data
+     * Data provider for testAttributeNameValidation().
+     *
+     * @return list<array{string, string}> test data
      */
-    public static function validAttributeNamesProvider()
+    public static function validAttributeNamesProvider(): array
     {
         return [
             ['asd]asdf.asdfa[asdfa', 'asdf.asdfa'],
@@ -915,11 +1111,13 @@ EOD;
             ['[0]ИІК[0]', 'ИІК'],
         ];
     }
+
     /**
-     * Data provider for [[testAttributeNameValidation()]].
-     * @return array test data
+     * Data provider for testAttributeNameException().
+     *
+     * @return list<array{string}> test data
      */
-    public static function invalidAttributeNamesProvider()
+    public static function invalidAttributeNamesProvider(): array
     {
         return [
             ['. ..'],
@@ -927,26 +1125,28 @@ EOD;
             ['a,b'],
         ];
     }
+
     /**
      * @param string $name
      * @param string $expected
      */
     #[DataProvider('validAttributeNamesProvider')]
-    public function testAttributeNameValidation($name, $expected)
+    public function testAttributeNameValidation(string $name, string $expected): void
     {
         $this->assertEquals($expected, Html::getAttributeName($name));
     }
+
     /**
      * @param string $name
      */
     #[DataProvider('invalidAttributeNamesProvider')]
-    public function testAttributeNameException($name)
+    public function testAttributeNameException(string $name): void
     {
-        $this->expectException('Hryvinskyi\Base\Helper\InvalidParamException');
+        $this->expectException(InvalidParamException::class);
         Html::getAttributeName($name);
     }
 
-    public function testEscapeJsRegularExpression()
+    public function testEscapeJsRegularExpression(): void
     {
         $expected = '/[a-z0-9-]+/';
         $actual = Html::escapeJsRegularExpression('([a-z0-9-]+)');
@@ -954,6 +1154,68 @@ EOD;
         $expected = '/([a-z0-9-]+)/gim';
         $actual = Html::escapeJsRegularExpression('/([a-z0-9-]+)/Ugimex');
         $this->assertSame($expected, $actual);
+    }
+
+    /**
+     * Option items whose values and labels need no encoding.
+     *
+     * @return array<string, string>
+     */
+    private function getDataItems(): array
+    {
+        return [
+            'value1' => 'text1',
+            'value2' => 'text2',
+        ];
+    }
+
+    /**
+     * Option items whose values and labels carry markup and repeated spaces.
+     *
+     * @return array<string, string>
+     */
+    private function getDataItems2(): array
+    {
+        return [
+            'value1<>' => 'text1<>',
+            'value  2' => 'text  2',
+        ];
+    }
+
+    /**
+     * An `item` callback for checkboxList() that prints the index before a label wrapping the checkbox.
+     *
+     * @return \Closure(int, string, string, bool, string): string
+     */
+    private function checkboxItemFormatter(): \Closure
+    {
+        return static function (int $index, string $label, string $name, bool $checked, string $value): string {
+            return $index . Html::label($label . ' ' . Html::checkbox($name, $checked, ['value' => $value]));
+        };
+    }
+
+    /**
+     * An `item` callback for radioList() that prints the index before a label wrapping the radio button.
+     *
+     * @return \Closure(int, string, string, bool, string): string
+     */
+    private function radioItemFormatter(): \Closure
+    {
+        return static function (int $index, string $label, string $name, bool $checked, string $value): string {
+            return $index . Html::label($label . ' ' . Html::radio($name, $checked, ['value' => $value]));
+        };
+    }
+
+    /**
+     * An `item` callback for ul() and ol() that prints a list item with an index class.
+     *
+     * @return \Closure(int|string, int): string
+     */
+    private function listItemFormatter(): \Closure
+    {
+        return static function (int|string $item, int $index): string {
+            return "<li class=\"item-$index\">$item</li>";
+        };
     }
 
     /**

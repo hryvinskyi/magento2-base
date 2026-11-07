@@ -10,24 +10,26 @@ declare(strict_types=1);
 namespace Hryvinskyi\Base\Model\Layout;
 
 /**
- * Class Xml
+ * Holds the current page's merged layout XML for the layout debug output.
  */
 class LayoutXml
 {
     /**
-     * @var string
+     * @var string|null
      */
-    private $layout;
+    private ?string $layout = null;
 
     /**
+     * Returns the layout XML recorded for this request.
+     *
      * @return string
-     * @throws NoSetLayoutException
+     * @throws NoSetLayoutException When no layout was recorded yet.
      */
     public function getLayout(): string
     {
         $layout = $this->layout;
 
-        if($layout === null) {
+        if ($layout === null) {
             throw new NoSetLayoutException();
         }
 
@@ -35,8 +37,9 @@ class LayoutXml
     }
 
     /**
-     * @param string $layout
+     * Records the layout XML of this request.
      *
+     * @param string $layout
      * @return LayoutXml
      */
     public function setLayout(string $layout): LayoutXml

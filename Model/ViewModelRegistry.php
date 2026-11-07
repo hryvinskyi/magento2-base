@@ -37,6 +37,11 @@ class ViewModelRegistry
      */
     private $pageCacheConfig;
 
+    /**
+     * @param ObjectManagerInterface $objectManager
+     * @param ViewModelCacheTags $viewModelCacheTags
+     * @param PageCacheConfig $pageCacheConfig
+     */
     public function __construct(
         ObjectManagerInterface $objectManager,
         ViewModelCacheTags $viewModelCacheTags,
@@ -52,26 +57,29 @@ class ViewModelRegistry
      *
      * @template T of ArgumentInterface
      * @param class-string<T> $viewModelClass Fully qualified class name (FQN)
-     * @param AbstractBlock|null $block Only required if view model is used within a template cached in ESI (ttl="n" in layout XML)
-     * @return ArgumentInterface
+     * @param AbstractBlock|null $block Only required if view model is used within a template cached in ESI
+     *                                   (ttl="n" in layout XML)
+     * @return T
      * @throws LocalizedException If class not found or not a view model
-     * @phpstan-return T
      */
     public function require(string $viewModelClass, ?AbstractBlock $block = null): ArgumentInterface
     {
         try {
             $object = $this->objectManager->get($viewModelClass);
         } catch (\Exception $e) {
-            throw new LocalizedException(__('The class %1 could not be instantiated. Exception: %2', $viewModelClass, $e->getMessage()));
+            throw new LocalizedException(
+                __('The class %1 could not be instantiated. Exception: %2', $viewModelClass, $e->getMessage())
+            );
         }
-        if (!$object instanceof ArgumentInterface) {
+        if (!$object instanceof ArgumentInterface || !$object instanceof $viewModelClass) {
             throw new LocalizedException(__('The class %1 is not a view model', $viewModelClass));
         }
 
-        // We do not want to collect the cache tags for blocks that will be served via ESI while rendering the main page FPC record.
-        // If we do, the main page will be purged for those tags, even though we only want to purge the ESI records.
-        // On ESI requests isVarnishEnabled() is false, so we don't need to check for a ttl value.
-        // If isVarnishEnabled() is true, this is a main page request (not ESI), so we check if the block is rendered within an ESI section.
+        // We do not want to collect the cache tags for blocks that will be served via ESI while rendering the main
+        // page FPC record. If we do, the main page will be purged for those tags, even though we only want to purge
+        // the ESI records. On ESI requests isVarnishEnabled() is false, so we don't need to check for a ttl value.
+        // If isVarnishEnabled() is true, this is a main page request (not ESI), so we check if the block is rendered
+        // within an ESI section.
         if (!$block || !($this->isVarnishEnabled() && $this->isCalledWithinEsiBlock($block))) {
             $this->viewModelCacheTags->collectFrom($object);
         }
@@ -79,14 +87,31 @@ class ViewModelRegistry
         return $object;
     }
 
+    /**
+     * Tells whether the block or its nearest ancestor with a ttl is cached in ESI (a positive ttl).
+     *
+     * @param AbstractBlock $block
+     * @return bool
+     */
     private function isCalledWithinEsiBlock(AbstractBlock $block): bool
     {
-        while ($block instanceof AbstractBlock && ! $block->getTtl()) {
-            $block = $block->getParentBlock();
+        $current = $block;
+        while ($current instanceof AbstractBlock) {
+            $ttl = $current->getData('ttl');
+            if ($ttl) {
+                return is_numeric($ttl) && $ttl > 0;
+            }
+            $current = $current->getParentBlock();
         }
-        return $block && $block->getTtl() > 0;
+
+        return false;
     }
 
+    /**
+     * Tells whether the full page cache is Varnish.
+     *
+     * @return bool
+     */
     private function isVarnishEnabled(): bool
     {
         return $this->pageCacheConfig->getType() === PageCacheConfig::VARNISH;

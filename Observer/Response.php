@@ -16,6 +16,9 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Message\ManagerInterface;
 
+/**
+ * Answers a request with the page's layout XML when the layout debug is on and the request asks for it.
+ */
 class Response implements ObserverInterface
 {
     /**
@@ -32,7 +35,6 @@ class Response implements ObserverInterface
      * @var ManagerInterface
      */
     private $messageManager;
-
 
     /**
      * Response constructor.
@@ -52,7 +54,10 @@ class Response implements ObserverInterface
     }
 
     /**
+     * Replaces the response with the layout XML for a request carrying the "xml" parameter.
+     *
      * @param Observer $observer
+     * @return void
      */
     public function execute(Observer $observer)
     {
