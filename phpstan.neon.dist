@@ -1,15 +1,18 @@
 parameters:
     level: 10
+    phpVersion: 80100
     paths:
         - registration.php
         - Api
         - Block
-        - Helper
+        - Exception
         - Model
         - Observer
         - Plugin
         - View
         - Test
+    stubFiles:
+        - phpstan/Serialize.stub
     bootstrapFiles:
         - ../../../vendor/autoload.php
     scanDirectories:

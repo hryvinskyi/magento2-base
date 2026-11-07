@@ -7,8 +7,8 @@
 
 namespace Hryvinskyi\Base\Plugin;
 
-use Hryvinskyi\Base\Helper\Config;
-use Magento\Framework\App\Request\Http;
+use Hryvinskyi\Base\Api\LayoutDebugConfigInterface;
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\View\Layout as ViewLayout;
 
 /**
@@ -17,27 +17,13 @@ use Magento\Framework\View\Layout as ViewLayout;
 class Layout
 {
     /**
-     * @var Http
-     */
-    private $request;
-
-    /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * Layout constructor.
-     *
-     * @param Http $request
-     * @param Config $config
+     * @param RequestInterface $request carries the debug parameters
+     * @param LayoutDebugConfigInterface $config tells whether the layout debug is on
      */
     public function __construct(
-        Http $request,
-        Config $config
+        private readonly RequestInterface $request,
+        private readonly LayoutDebugConfigInterface $config
     ) {
-        $this->request = $request;
-        $this->config = $config;
     }
 
     /**

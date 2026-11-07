@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Hryvinskyi\Base\Test\Unit\View\Helper\SecureHtmlRender;
 
+use Hryvinskyi\Base\Test\Unit\Model\Html\Fixture\HtmlCoreServices;
 use Hryvinskyi\Base\View\Helper\SecureHtmlRender\HtmlRenderer;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Helper\SecureHtmlRender\TagData;
@@ -30,7 +31,7 @@ class HtmlRendererTest extends TestCase
         $escaper->method('escapeHtml')->willReturnCallback(
             static fn (string $text): string => htmlspecialchars($text, ENT_QUOTES)
         );
-        $this->renderer = new HtmlRenderer($escaper);
+        $this->renderer = new HtmlRenderer($escaper, (new HtmlCoreServices())->tagRenderer());
     }
 
     public function testTextContentIsEscaped(): void

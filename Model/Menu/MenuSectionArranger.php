@@ -87,7 +87,7 @@ class MenuSectionArranger implements MenuSectionArrangerInterface
     {
         usort(
             $groups,
-            static fn (MenuGroupInterface $a, MenuGroupInterface $b): int => $a->getSortOrder() <=> $b->getSortOrder()
+            fn (MenuGroupInterface $a, MenuGroupInterface $b): int => $a->getSortOrder() <=> $b->getSortOrder()
         );
 
         $byCode = [];

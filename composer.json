@@ -3,11 +3,23 @@
     "description": "N/A",
     "require": {
         "php": ">=8.1",
+        "ext-tokenizer": "*",
         "magento/framework": "^103.0",
-        "magento/module-backend": "^102.0"
+        "magento/module-backend": "^102.0",
+        "magento/module-config": "^101.2",
+        "magento/module-developer": "^100.4",
+        "magento/module-page-cache": "^100.4",
+        "magento/module-store": "^101.1",
+        "symfony/var-dumper": "^5.4 || ^6.0 || ^7.0 || ^8.0"
+    },
+    "conflict": {
+        "hryvinskyi/magento2-head-tag-manager": "<3.0",
+        "hryvinskyi/magento2-page-speed": "<1.0.8",
+        "hryvinskyi/magento2-page-speed-js-merge": "<1.0.8",
+        "hryvinskyi/magento2-error-reporting": "<1.1"
     },
     "type": "magento2-module",
-    "version": "2.3.1",
+    "version": "3.0.0",
     "license": "MIT",
     "autoload": {
         "files": [ "registration.php" ],

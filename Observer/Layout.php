@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Hryvinskyi\Base\Observer;
 
-use Hryvinskyi\Base\Helper\Config;
+use Hryvinskyi\Base\Api\LayoutDebugConfigInterface;
 use Hryvinskyi\Base\Model\Layout\LayoutXml;
 use Magento\Framework\Event\ObserverInterface;
 
@@ -19,27 +19,13 @@ use Magento\Framework\Event\ObserverInterface;
 class Layout implements ObserverInterface
 {
     /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var LayoutXml
-     */
-    private $layoutXml;
-
-    /**
-     * Layout constructor.
-     *
-     * @param Config $config
-     * @param LayoutXml $layoutXml
+     * @param LayoutDebugConfigInterface $config tells whether the layout debug is on
+     * @param LayoutXml $layoutXml holds the recorded layout XML
      */
     public function __construct(
-        Config $config,
-        LayoutXml $layoutXml
+        private readonly LayoutDebugConfigInterface $config,
+        private readonly LayoutXml $layoutXml
     ) {
-        $this->config = $config;
-        $this->layoutXml = $layoutXml;
     }
 
     /**

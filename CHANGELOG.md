@@ -5,6 +5,81 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-11-07
+
+The static helpers become injected services. See "Upgrading from 2.x" in the README for the table of every old call.
+
+### Added
+- Role interfaces under `Api/`, each `@api`, implemented under `Model/` and wired in `etc/di.xml`: `Api\Json`
+  (`JsonEncoderInterface`, `JsonDecoderInterface`), `Api\Debug\VarDumperInterface`, `Api\Arrays`
+  (`ArrayPathReaderInterface`, `ArrayPathWriterInterface`, `ArrayMergerInterface`, `ArrayIndexerInterface`,
+  `ArraySorterInterface`, `ArrayInspectorInterface`, `ArrayFilterInterface`, `ObjectToArrayConverterInterface`,
+  `ArrayHtmlEncoderInterface`), `Api\Html` (`HtmlEncoderInterface`, `AttributeRendererInterface`,
+  `TagRendererInterface`, `CssOptionsInterface`, `InputNameResolverInterface`, `JsRegexConverterInterface`,
+  `ResourceTagRendererInterface`, `LinkRendererInterface`, `FormRendererInterface`, `InputRendererInterface`,
+  `ChoiceListRendererInterface`, `ListRendererInterface`), `Api\Data` (`ArrayableInterface`,
+  `UnsetArrayValueInterface`, `ReplaceArrayValueInterface`) and `Api\LayoutDebugConfigInterface`.
+- `Html::$attributeOrder`, `$dataAttributes`, `$normalizeClassAttribute`, `$voidElements` and `$attributeRegex` are
+  required constructor arguments set in `etc/di.xml`, so a project changes them there. The classes hold no default:
+  `etc/di.xml` is their one source, a mistyped argument fails in the container, and code building one of these classes
+  by hand passes them.
+- `conflict` with the released versions of head-tag-manager (<3.0), page-speed and page-speed-js-merge (<1.0.8) and
+  error-reporting (<1.1), which call the removed statics.
+
+### Removed
+- `Helper\Html`: replaced by the `Api\Html` services.
+- `Helper\ArrayHelper`: replaced by the `Api\Arrays` services.
+- `Helper\Json`: replaced by `Api\Json\JsonEncoderInterface` and `JsonDecoderInterface`. `$prettyPrint` and
+  `$jsonErrorMessages` are gone: pass `JSON_PRETTY_PRINT`, and read PHP's message on the exception.
+- `Helper\VarDumper`: replaced by `Api\Debug\VarDumperInterface`. `dump()` is replaced by the global
+  `dump()` and `dd()` of `symfony/var-dumper`, now a declared requirement, which work anywhere with no import.
+- `Helper\Config`: replaced by `Api\LayoutDebugConfigInterface`.
+- `Helper\Arrayable`: replaced by `Api\Data\ArrayableInterface`, with typed signatures.
+- `Helper\ReplaceArrayValue`, `Helper\UnsetArrayValue`: replaced by `Api\Data\ReplaceArrayValueInterface` and
+  `UnsetArrayValueInterface`, created by their generated factories, without `__set_state()`. A replacement carries its
+  value through `withValue()`.
+- `Helper\ConsoleHelper`, with no replacement.
+- `Helper\InvalidParamException`, `Helper\InvalidValueException`: moved to `Exception\`.
+
+### Changed
+- `InvalidParamException` extends `\InvalidArgumentException` (it was a `\BadMethodCallException`);
+  `InvalidValueException` still extends `\UnexpectedValueException`. Neither has `getName()` any more.
+- No public method changes an argument by reference. `ArrayHelper::setValue()`, `remove()`, `removeValue()` and `multisort()`
+  and the `Html` CSS option methods return the new value. What `remove()` returned is read first with a literal key
+  read (`array_key_exists`, not `getValue()`, which falls through to a dot path); what `removeValue()` returned comes
+  from `valuesIdenticalTo()`.
+- `renderSelectOptions()` leaves its options alone: a caller rendering its own `<select>` strips
+  `ChoiceListRendererInterface::SELECT_OPTION_KEYS`.
+- `setValue()` has no `null` path, `htmlEncode()` has no charset, `index()` no longer accepts a lone Closure as
+  `$groups`.
+- `remove()` and `removeValue()` take an array: `null` is a `TypeError`, where 2.x left it alone and returned the
+  default.
+- `merge()` takes an array first and an array or object after it: a scalar or `null` is a `TypeError`, where 2.x
+  skipped it.
+- `Html::encode($x, false)` is `HtmlEncoderInterface::encodeKeepingEntities()`. Both encoders take what `Html::encode()`
+  took: `string|int|float|bool|\Stringable|null`, cast to a string, so `null` gives `''`.
+- `tag()`, `beginTag()` and `endTag()` take `?string`; `false` is no longer accepted. `ul()` and `ol()` take `iterable`,
+  so `null` is a `TypeError`.
+- `Json::decode()` takes `?string`; `keepObjectType` is a constructor argument of `Model\Json\JsonEncoder`.
+- The highlighted dump no longer comes from `highlight_string()`: `<pre><code style="color: #000000">` with one
+  coloured span per token, the same text, every token escaped.
+- The services declare `strict_types`: an `item` callback receives the raw key, an `int` for a numeric key, so a
+  callback typed `string` needs widening.
+- Requires `magento/module-developer` and `magento/module-store`, which `Plugin\DebugHints` uses,
+  `magento/module-page-cache`, which `Model\ViewModelRegistry` uses, `magento/module-config`, which
+  `etc/adminhtml/system.xml` uses, and `ext-tokenizer`, which the closure export and the highlighted dump use; sequences
+  `Magento_Config`, `Magento_Developer`, `Magento_PageCache` and `Magento_Store`.
+- `Plugin\Layout` and `Plugin\DebugHints` take `Magento\Framework\App\RequestInterface` instead of the concrete HTTP
+  request.
+- `phpstan.neon.dist` analyses `Exception/` and holds the code to the PHP 8.1 floor (`phpVersion: 80100`).
+
+### Fixed
+- `LayoutDebugConfigInterface::isEnabledLayoutDebug()` also requires a visitor the developer restriction allows, so
+  `?xml=1`, the recorded layout and the page cache skip follow the rule the template hints already had: on a
+  developer-mode host, a visitor outside the allow-list no longer gets them.
+- `Plugin\DebugHints` reads the current store only when it is about to show hints, not on every template engine
+  creation.
+
 ## [2.3.1] - 2026-11-07
 
 ### Fixed

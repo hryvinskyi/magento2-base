@@ -21,6 +21,136 @@
                 type="Hryvinskyi\Base\Model\Menu\MenuGroup"/>
     <preference for="Hryvinskyi\Base\Model\Menu\MenuSectionArrangerInterface"
                 type="Hryvinskyi\Base\Model\Menu\MenuSectionArranger"/>
+    <preference for="Hryvinskyi\Base\Api\LayoutDebugConfigInterface"
+                type="Hryvinskyi\Base\Model\LayoutDebugConfig"/>
+    <preference for="Hryvinskyi\Base\Api\Json\JsonEncoderInterface"
+                type="Hryvinskyi\Base\Model\Json\JsonEncoder"/>
+    <preference for="Hryvinskyi\Base\Api\Json\JsonDecoderInterface"
+                type="Hryvinskyi\Base\Model\Json\JsonDecoder"/>
+    <preference for="Hryvinskyi\Base\Api\Debug\VarDumperInterface"
+                type="Hryvinskyi\Base\Model\Debug\VarDumper"/>
+    <preference for="Hryvinskyi\Base\Api\Arrays\ArrayPathReaderInterface"
+                type="Hryvinskyi\Base\Model\Arrays\ArrayPathReader"/>
+    <preference for="Hryvinskyi\Base\Api\Arrays\ArrayPathWriterInterface"
+                type="Hryvinskyi\Base\Model\Arrays\ArrayPathWriter"/>
+    <preference for="Hryvinskyi\Base\Api\Arrays\ArrayMergerInterface"
+                type="Hryvinskyi\Base\Model\Arrays\ArrayMerger"/>
+    <preference for="Hryvinskyi\Base\Api\Arrays\ArrayIndexerInterface"
+                type="Hryvinskyi\Base\Model\Arrays\ArrayIndexer"/>
+    <preference for="Hryvinskyi\Base\Api\Arrays\ArraySorterInterface"
+                type="Hryvinskyi\Base\Model\Arrays\ArraySorter"/>
+    <preference for="Hryvinskyi\Base\Api\Arrays\ArrayInspectorInterface"
+                type="Hryvinskyi\Base\Model\Arrays\ArrayInspector"/>
+    <preference for="Hryvinskyi\Base\Api\Arrays\ArrayFilterInterface"
+                type="Hryvinskyi\Base\Model\Arrays\ArrayFilter"/>
+    <preference for="Hryvinskyi\Base\Api\Arrays\ObjectToArrayConverterInterface"
+                type="Hryvinskyi\Base\Model\Arrays\ObjectToArrayConverter"/>
+    <preference for="Hryvinskyi\Base\Api\Arrays\ArrayHtmlEncoderInterface"
+                type="Hryvinskyi\Base\Model\Arrays\ArrayHtmlEncoder"/>
+    <preference for="Hryvinskyi\Base\Api\Data\UnsetArrayValueInterface"
+                type="Hryvinskyi\Base\Model\Arrays\UnsetArrayValue"/>
+    <preference for="Hryvinskyi\Base\Api\Data\ReplaceArrayValueInterface"
+                type="Hryvinskyi\Base\Model\Arrays\ReplaceArrayValue"/>
+    <preference for="Hryvinskyi\Base\Api\Html\HtmlEncoderInterface"
+                type="Hryvinskyi\Base\Model\Html\HtmlEncoder"/>
+    <preference for="Hryvinskyi\Base\Api\Html\AttributeRendererInterface"
+                type="Hryvinskyi\Base\Model\Html\AttributeRenderer"/>
+    <preference for="Hryvinskyi\Base\Api\Html\TagRendererInterface"
+                type="Hryvinskyi\Base\Model\Html\TagRenderer"/>
+    <preference for="Hryvinskyi\Base\Api\Html\CssOptionsInterface"
+                type="Hryvinskyi\Base\Model\Html\CssOptions"/>
+    <preference for="Hryvinskyi\Base\Api\Html\InputNameResolverInterface"
+                type="Hryvinskyi\Base\Model\Html\InputNameResolver"/>
+    <preference for="Hryvinskyi\Base\Api\Html\JsRegexConverterInterface"
+                type="Hryvinskyi\Base\Model\Html\JsRegexConverter"/>
+    <preference for="Hryvinskyi\Base\Api\Html\ResourceTagRendererInterface"
+                type="Hryvinskyi\Base\Model\Html\ResourceTagRenderer"/>
+    <preference for="Hryvinskyi\Base\Api\Html\LinkRendererInterface"
+                type="Hryvinskyi\Base\Model\Html\LinkRenderer"/>
+    <preference for="Hryvinskyi\Base\Api\Html\FormRendererInterface"
+                type="Hryvinskyi\Base\Model\Html\FormRenderer"/>
+    <preference for="Hryvinskyi\Base\Api\Html\InputRendererInterface"
+                type="Hryvinskyi\Base\Model\Html\InputRenderer"/>
+    <preference for="Hryvinskyi\Base\Api\Html\ChoiceListRendererInterface"
+                type="Hryvinskyi\Base\Model\Html\ChoiceListRenderer"/>
+    <preference for="Hryvinskyi\Base\Api\Html\ListRendererInterface"
+                type="Hryvinskyi\Base\Model\Html\ListRenderer"/>
+    <type name="Hryvinskyi\Base\Model\Debug\ClosureSourceReader">
+        <arguments>
+            <argument name="driver" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="Hryvinskyi\Base\Model\Html\AttributeRenderer">
+        <arguments>
+            <argument name="attributeOrder" xsi:type="array">
+                <item name="type" xsi:type="string">type</item>
+                <item name="id" xsi:type="string">id</item>
+                <item name="class" xsi:type="string">class</item>
+                <item name="name" xsi:type="string">name</item>
+                <item name="value" xsi:type="string">value</item>
+                <item name="href" xsi:type="string">href</item>
+                <item name="src" xsi:type="string">src</item>
+                <item name="srcset" xsi:type="string">srcset</item>
+                <item name="form" xsi:type="string">form</item>
+                <item name="action" xsi:type="string">action</item>
+                <item name="method" xsi:type="string">method</item>
+                <item name="selected" xsi:type="string">selected</item>
+                <item name="checked" xsi:type="string">checked</item>
+                <item name="readonly" xsi:type="string">readonly</item>
+                <item name="disabled" xsi:type="string">disabled</item>
+                <item name="multiple" xsi:type="string">multiple</item>
+                <item name="size" xsi:type="string">size</item>
+                <item name="maxlength" xsi:type="string">maxlength</item>
+                <item name="width" xsi:type="string">width</item>
+                <item name="height" xsi:type="string">height</item>
+                <item name="rows" xsi:type="string">rows</item>
+                <item name="cols" xsi:type="string">cols</item>
+                <item name="alt" xsi:type="string">alt</item>
+                <item name="title" xsi:type="string">title</item>
+                <item name="rel" xsi:type="string">rel</item>
+                <item name="media" xsi:type="string">media</item>
+            </argument>
+            <argument name="dataAttributes" xsi:type="array">
+                <item name="aria" xsi:type="string">aria</item>
+                <item name="data" xsi:type="string">data</item>
+                <item name="data-ng" xsi:type="string">data-ng</item>
+                <item name="ng" xsi:type="string">ng</item>
+            </argument>
+            <argument name="normalizeClassAttribute" xsi:type="boolean">true</argument>
+        </arguments>
+    </type>
+    <type name="Hryvinskyi\Base\Model\Html\CssOptions">
+        <arguments>
+            <argument name="normalizeClassAttribute" xsi:type="boolean">true</argument>
+        </arguments>
+    </type>
+    <type name="Hryvinskyi\Base\Model\Html\TagRenderer">
+        <arguments>
+            <argument name="voidElements" xsi:type="array">
+                <item name="area" xsi:type="boolean">true</item>
+                <item name="base" xsi:type="boolean">true</item>
+                <item name="br" xsi:type="boolean">true</item>
+                <item name="col" xsi:type="boolean">true</item>
+                <item name="command" xsi:type="boolean">true</item>
+                <item name="embed" xsi:type="boolean">true</item>
+                <item name="hr" xsi:type="boolean">true</item>
+                <item name="img" xsi:type="boolean">true</item>
+                <item name="input" xsi:type="boolean">true</item>
+                <item name="keygen" xsi:type="boolean">true</item>
+                <item name="link" xsi:type="boolean">true</item>
+                <item name="meta" xsi:type="boolean">true</item>
+                <item name="param" xsi:type="boolean">true</item>
+                <item name="source" xsi:type="boolean">true</item>
+                <item name="track" xsi:type="boolean">true</item>
+                <item name="wbr" xsi:type="boolean">true</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Hryvinskyi\Base\Model\Html\InputNameResolver">
+        <arguments>
+            <argument name="attributeRegex" xsi:type="string">/(^|.*\])([\w\.\+]+)(\[.*|$)/u</argument>
+        </arguments>
+    </type>
     <type name="Magento\Framework\View\Layout">
         <plugin name="Hryvinskyi_Base::plugin_layout" type="Hryvinskyi\Base\Plugin\Layout" sortOrder="10"/>
     </type>

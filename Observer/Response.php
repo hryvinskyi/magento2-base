@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Hryvinskyi\Base\Observer;
 
-use Hryvinskyi\Base\Helper\Config;
+use Hryvinskyi\Base\Api\LayoutDebugConfigInterface;
 use Hryvinskyi\Base\Model\Layout\LayoutXml;
 use Hryvinskyi\Base\Model\Layout\NoSetLayoutException;
 use Magento\Framework\Event\Observer;
@@ -22,35 +22,15 @@ use Magento\Framework\Message\ManagerInterface;
 class Response implements ObserverInterface
 {
     /**
-     * @var LayoutXml
-     */
-    private $layoutXml;
-
-    /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var ManagerInterface
-     */
-    private $messageManager;
-
-    /**
-     * Response constructor.
-     *
-     * @param LayoutXml $layoutXml
-     * @param Config $config
-     * @param ManagerInterface $messageManager
+     * @param LayoutXml $layoutXml holds the recorded layout XML
+     * @param LayoutDebugConfigInterface $config tells whether the layout debug is on
+     * @param ManagerInterface $messageManager reports a page that recorded no layout
      */
     public function __construct(
-        LayoutXml $layoutXml,
-        Config $config,
-        ManagerInterface $messageManager
+        private readonly LayoutXml $layoutXml,
+        private readonly LayoutDebugConfigInterface $config,
+        private readonly ManagerInterface $messageManager
     ) {
-        $this->layoutXml = $layoutXml;
-        $this->config = $config;
-        $this->messageManager = $messageManager;
     }
 
     /**

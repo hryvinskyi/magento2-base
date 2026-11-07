@@ -198,7 +198,7 @@ class Menu extends Template
      */
     private function visibleItems(): array
     {
-        return array_filter($this->allowedItems(), static fn (MenuItemInterface $item): bool => $item->isActive());
+        return array_filter($this->allowedItems(), fn (MenuItemInterface $item): bool => $item->isActive());
     }
 
     /**
@@ -414,7 +414,7 @@ class Menu extends Template
      */
     private function sortItems(array $items): array
     {
-        uasort($items, static function (MenuItemInterface $a, MenuItemInterface $b): int {
+        uasort($items, function (MenuItemInterface $a, MenuItemInterface $b): int {
             return $a->getSortOrder() <=> $b->getSortOrder();
         });
 

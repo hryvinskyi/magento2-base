@@ -1,9 +1,8 @@
 # Magento 2 Base Module
 
 A comprehensive Magento 2 base module providing:
-- **Yii2 Framework Helpers**: Battle-tested utility classes for array manipulation, HTML generation, JSON handling, and debugging
+- **Injected services**: Role interfaces for array manipulation, HTML generation, JSON handling, and debugging, ported from Yii2
 - **ViewModel Registry**: Global access to view models in templates without layout XML configuration
-- **Console Utilities**: ANSI terminal control, progress bars, and formatted CLI output
 - **Layout Debugging**: Developer mode tools for layout XML and block structure inspection
 
 ## Installation Guide
@@ -20,12 +19,12 @@ bin/magento setup:upgrade
    - [ViewModel Registry](#1-viewmodel-registry-viewmodels)
    - [Layout Debugging](#2-layout-debugging-developer-mode-only)
    - [Extensible Admin Menu](#3-extensible-admin-menu)
-2. [Yii2 Framework Helpers](#yii2-framework-helper-classes)
-   - [ArrayHelper](#arrayhelper)
-   - [Html](#html)
-   - [Json](#json)
+2. [Services](#services)
+   - [Arrays](#arrays)
+   - [HTML](#html)
+   - [JSON](#json)
    - [VarDumper](#vardumper)
-3. [Console Utilities](#console-utilities-consolehelper)
+3. [Upgrading from 2.x](#upgrading-from-2x)
 4. [Requirements](#requirements)
 5. [License](#license)
 
@@ -84,8 +83,9 @@ bin/magento deploy:mode:set developer
 ```
 
 **Configuration:**
-The debugging information is controlled by `Hryvinskyi\Base\Helper\Config`:
-- Only works in developer mode (`State::MODE_DEVELOPER`)
+The debugging information is controlled by `Hryvinskyi\Base\Api\LayoutDebugConfigInterface`:
+- Only works in developer mode (`State::MODE_DEVELOPER`), and there only for a visitor the developer restriction
+  (`dev/restrict/allow_ips`) allows; with no list set, every visitor
 - Injected into responses via event observers
 - No configuration needed - works out of the box
 
@@ -313,565 +313,237 @@ A long menu reads better in titled groups. Declare the groups in the `groups` ar
 </item>
 ```
 
-## Yii2 Framework Helper Classes
+## Services
 
-This module provides proven, battle-tested helper classes from the Yii2 framework, adapted for Magento 2.
+Base publishes its utilities as small role interfaces under `Api/`, implemented under `Model/` and wired in
+`etc/di.xml`. Each interface answers one question, so a class depends on the role it uses and nothing else. The
+interfaces are `@api`; the services are stateless and shared; no public method changes an argument by reference.
 
-### ArrayHelper
-
-Comprehensive array manipulation utilities with 30+ methods for working with arrays and objects.
-
-**Key Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `getValue($array, $key, $default)` | Retrieve nested values using dot notation (`user.address.street`) |
-| `setValue(&$array, $key, $value)` | Set nested values using dot notation |
-| `remove(&$array, $key, $default)` | Remove and return array element |
-| `merge($a, $b)` | Recursively merge arrays with smart key handling |
-| `index($array, $key)` | Index/group arrays by specified keys |
-| `getColumn($array, $name)` | Extract column values from multidimensional arrays |
-| `map($array, $from, $to, $group)` | Build key-value maps from arrays |
-| `filter($array, $filters)` | Filter array using dot notation rules |
-| `multisort(&$array, $key, $direction)` | Sort by multiple keys with different directions |
-| `toArray($object, $properties, $recursive)` | Convert objects to arrays with property mapping |
-| `isAssociative($array, $allStrings)` | Check if array is associative |
-| `isIndexed($array, $consecutive)` | Check if array is indexed |
-| `htmlEncode($data, $valuesOnly, $charset)` | Encode HTML entities recursively |
-| `htmlDecode($data, $valuesOnly)` | Decode HTML entities recursively |
-| `keyExists($key, $array, $caseSensitive)` | Check key existence with case options |
-| `isIn($needle, $haystack, $strict)` | Check value membership |
-| `isSubset($needles, $haystack, $strict)` | Check if all values exist |
-
-**Advanced Features:**
-- **UnsetArrayValue**: Mark array values for removal during merge
-- **ReplaceArrayValue**: Force replacement instead of recursive merge
-
-**Usage Examples:**
+Inject the interface you need:
 
 ```php
-use Hryvinskyi\Base\Helper\ArrayHelper;
+use Hryvinskyi\Base\Api\Arrays\ArrayPathReaderInterface;
+use Hryvinskyi\Base\Api\Html\HtmlEncoderInterface;
+use Hryvinskyi\Base\Api\Html\TagRendererInterface;
 
-// Dot notation access
-$username = ArrayHelper::getValue($_POST, 'user.profile.username', 'guest');
-ArrayHelper::setValue($config, 'database.host', 'localhost');
-
-// Array merging with smart handling
-$merged = ArrayHelper::merge(
-    ['items' => ['apple', 'banana']],
-    ['items' => ['cherry']]
-);
-// Result: ['items' => ['apple', 'banana', 'cherry']]
-
-// Indexing and grouping
-$users = [
-    ['id' => 1, 'name' => 'John', 'role' => 'admin'],
-    ['id' => 2, 'name' => 'Jane', 'role' => 'user'],
-    ['id' => 3, 'name' => 'Bob', 'role' => 'admin'],
-];
-
-$indexed = ArrayHelper::index($users, 'id');
-// Result: [1 => [...], 2 => [...], 3 => [...]]
-
-$grouped = ArrayHelper::index($users, null, 'role');
-// Result: ['admin' => [[...], [...]], 'user' => [[...]]]
-
-// Column extraction
-$ids = ArrayHelper::getColumn($users, 'id');
-// Result: [1, 2, 3]
-
-// Multi-key sorting
-ArrayHelper::multisort($users, ['role', 'name'], [SORT_ASC, SORT_DESC]);
-
-// Object conversion with custom property mapping
-$array = ArrayHelper::toArray($object, [
-    'id',
-    'username' => 'name',
-    'fullName' => function($obj) { return $obj->firstName . ' ' . $obj->lastName; }
-]);
-
-// Filtering with conditions
-$filtered = ArrayHelper::filter($users, [
-    'id' => [1, 2],  // Include only these IDs
-    'role' => 'admin'  // Only admins
-]);
-
-// Map creation
-$nameMap = ArrayHelper::map($users, 'id', 'name');
-// Result: [1 => 'John', 2 => 'Jane', 3 => 'Bob']
-
-// Force replacement in merge
-use Hryvinskyi\Base\Helper\ReplaceArrayValue;
-$merged = ArrayHelper::merge(
-    ['items' => ['a', 'b']],
-    ['items' => new ReplaceArrayValue(['c', 'd'])]
-);
-// Result: ['items' => ['c', 'd']] (replaced, not merged)
-```
-
-### Html
-
-HTML generation helper with 40+ methods for programmatic HTML creation and manipulation.
-
-**Element Generation:**
-- `tag($name, $content, $options)` - Generate any HTML tag
-- `a($text, $url, $options)` - Hyperlinks
-- `mailto($text, $email, $options)` - Email links
-- `img($src, $options)` - Images
-- `label($content, $for, $options)` - Labels
-- `button($content, $options)` - Buttons
-- `submitButton($content, $options)` - Submit buttons
-- `resetButton($content, $options)` - Reset buttons
-
-**Form Generation:**
-- `beginForm($action, $method, $formKey, $options)` - Form opening with CSRF
-- `endForm()` - Form closing
-- `input($type, $name, $value, $options)` - Generic input
-- `textInput($name, $value, $options)` - Text input
-- `hiddenInput($name, $value, $options)` - Hidden input
-- `passwordInput($name, $value, $options)` - Password input
-- `fileInput($name, $value, $options)` - File input
-- `textarea($name, $value, $options)` - Textarea
-- `radio($name, $checked, $options)` - Radio button
-- `checkbox($name, $checked, $options)` - Checkbox
-
-**Lists and Selections:**
-- `dropDownList($name, $selection, $items, $options)` - Dropdown select
-- `listBox($name, $selection, $items, $options)` - Multi-select list
-- `checkboxList($name, $selection, $items, $options)` - Checkbox list
-- `radioList($name, $selection, $items, $options)` - Radio button list
-- `ul($items, $options)` - Unordered list
-- `ol($items, $options)` - Ordered list
-
-**Asset Tags:**
-- `cssFile($url, $options)` - CSS link tag with IE conditional support
-- `jsFile($url, $options)` - JavaScript script tag with IE conditional support
-
-**CSS/Style Manipulation:**
-- `addCssClass(&$options, $class)` - Add CSS class(es)
-- `removeCssClass(&$options, $class)` - Remove CSS class(es)
-- `addCssStyle(&$options, $style, $overwrite)` - Add inline styles
-- `removeCssStyle(&$options, $properties)` - Remove inline styles
-
-**Utilities:**
-- `encode($content, $doubleEncode)` - HTML entity encoding
-- `decode($content)` - HTML entity decoding
-- `renderTagAttributes($attributes)` - Render attribute string with data-* support
-
-**Usage Examples:**
-
-```php
-use Hryvinskyi\Base\Helper\Html;
-
-// Generate links
-echo Html::a('Visit site', 'https://example.com', ['class' => 'external-link', 'target' => '_blank']);
-echo Html::mailto('Contact us', 'support@example.com');
-
-// Create forms
-echo Html::beginForm('/checkout/submit', 'post', $formKey, ['id' => 'checkout-form']);
-echo Html::textInput('email', '', ['class' => 'form-control', 'required' => true]);
-echo Html::passwordInput('password', '', ['class' => 'form-control']);
-echo Html::textarea('comments', '', ['rows' => 5, 'class' => 'form-control']);
-echo Html::submitButton('Submit Order', ['class' => 'btn btn-primary']);
-echo Html::endForm();
-
-// Dropdowns and lists
-echo Html::dropDownList('country', 'US', [
-    'US' => 'United States',
-    'CA' => 'Canada',
-    'UK' => 'United Kingdom'
-], ['class' => 'country-select']);
-
-// Checkbox/radio lists
-echo Html::checkboxList('features', ['wifi', 'parking'], [
-    'wifi' => 'WiFi',
-    'parking' => 'Parking',
-    'pool' => 'Swimming Pool'
-]);
-
-// Lists
-echo Html::ul(['Apple', 'Banana', 'Cherry'], [
-    'class' => 'fruit-list',
-    'item' => function($item, $index) {
-        return Html::tag('span', $item, ['data-index' => $index]);
-    }
-]);
-
-// CSS class manipulation
-$options = ['class' => 'btn'];
-Html::addCssClass($options, 'btn-primary btn-lg');
-Html::removeCssClass($options, 'btn-lg');
-// Result: ['class' => 'btn btn-primary']
-
-// Style manipulation
-$options = [];
-Html::addCssStyle($options, 'color: red');
-Html::addCssStyle($options, ['font-size' => '14px', 'margin' => '10px']);
-// Result: ['style' => 'color: red; font-size: 14px; margin: 10px;']
-
-// Asset tags with IE conditional comments
-echo Html::cssFile('/css/style.css', ['media' => 'screen']);
-echo Html::cssFile('/css/ie8.css', ['condition' => 'lt IE 9']);
-echo Html::jsFile('/js/script.js', ['async' => true]);
-
-// Custom tags with data attributes
-echo Html::tag('div', 'Content', [
-    'class' => 'container',
-    'data-module' => 'carousel',
-    'data-options' => ['autoplay' => true, 'delay' => 3000]
-]);
-```
-
-### Json
-
-JSON encoding/decoding utilities with enhanced error handling and features beyond native PHP JSON functions.
-
-**Features:**
-- Enhanced error handling with descriptive messages
-- Pretty print support via static property
-- Object type preservation control
-- HTML-safe encoding for embedding in attributes
-- Circular reference detection
-
-**Methods:**
-- `encode($value, $options)` - Encode with error handling
-- `htmlEncode($value)` - HTML-safe encoding (escapes quotes, tags, amp, apos)
-- `decode($json, $asArray)` - Decode with error handling
-
-**Properties:**
-- `$prettyPrint` - Enable/disable pretty printing (null = use encode options)
-- `$keepObjectType` - Avoid objects with zero-indexed keys being encoded as arrays
-
-**Usage Examples:**
-
-```php
-use Hryvinskyi\Base\Helper\Json;
-
-// Basic encoding
-$json = Json::encode(['name' => 'John', 'age' => 30]);
-
-// Pretty printing
-Json::$prettyPrint = true;
-$prettyJson = Json::encode(['name' => 'John', 'age' => 30]);
-/*
+class ProductBadge
 {
-    "name": "John",
-    "age": 30
+    public function __construct(
+        private readonly ArrayPathReaderInterface $arrayPathReader,
+        private readonly HtmlEncoderInterface $htmlEncoder,
+        private readonly TagRendererInterface $tagRenderer
+    ) {
+    }
+
+    public function render(array $product): string
+    {
+        $label = (string)$this->arrayPathReader->getValue($product, 'badge.label', 'New');
+
+        return $this->tagRenderer->tag('span', $this->htmlEncoder->encode($label), ['class' => 'badge']);
+    }
 }
-*/
+```
 
-// HTML-safe encoding for embedding in attributes
-$safeJson = Json::htmlEncode(['alert' => '<script>alert("xss")</script>']);
-echo '<div data-config="' . $safeJson . '">'; // Safely embedded
+### Arrays
 
-// Object type preservation
-Json::$keepObjectType = true;
-$json = Json::encode((object)['test']);
-// Result: {"0":"test"} instead of ["test"]
+| Interface (`Hryvinskyi\Base\Api\Arrays\`) | Methods |
+|-------------------------------------------|---------|
+| `ArrayPathReaderInterface` | `getValue($source, $key, $default)` reads a dot path; `keyExists($key, $array, $caseSensitive)` |
+| `ArrayPathWriterInterface` | `setValue($array, $path, $value)`, `remove($array, $key)`, `removeValue($array, $value)`, `valuesIdenticalTo($array, $value)`; each returns an array |
+| `ArrayMergerInterface` | `merge($first, ...$others)` merges recursively |
+| `ArrayIndexerInterface` | `index($array, $key, $groups)`, `getColumn($array, $name, $keepKeys)`, `map($array, $from, $to, $group)` |
+| `ArraySorterInterface` | `multisort($array, $key, $direction, $sortFlag)` returns the sorted rows |
+| `ArrayFilterInterface` | `filter($array, $filters)` keeps or drops dot paths |
+| `ArrayInspectorInterface` | `isAssociative()`, `isIndexed()`, `isIn()`, `isTraversable()`, `isSubset()` |
+| `ArrayHtmlEncoderInterface` | `htmlEncode($data, $valuesOnly)`, `htmlDecode($data, $valuesOnly)` |
+| `ObjectToArrayConverterInterface` | `toArray($object, $properties, $recursive)` |
 
-// Decoding with error handling
-try {
-    $data = Json::decode($jsonString);
-} catch (\Hryvinskyi\Base\Helper\InvalidParamException $e) {
-    // Handle JSON decode error
-    echo "Invalid JSON: " . $e->getMessage();
-}
+`Api\Data\ArrayableInterface` lets an object describe its own array form. Two markers steer a merge: an
+`Api\Data\UnsetArrayValueInterface` removes a key, an `Api\Data\ReplaceArrayValueInterface` replaces a value instead of
+merging into it. Both come from their generated factories, and a replacement carries its value through `withValue()`:
 
-// Decode as object instead of array
-$object = Json::decode($jsonString, false);
+```php
+$merged = $this->arrayMerger->merge(
+    ['items' => ['a', 'b'], 'debug' => true],
+    [
+        'items' => $this->replaceArrayValueFactory->create()->withValue(['c', 'd']),
+        'debug' => $this->unsetArrayValueFactory->create(),
+    ]
+);
+// ['items' => ['c', 'd']]
+```
+
+### HTML
+
+| Interface (`Hryvinskyi\Base\Api\Html\`) | Methods |
+|-----------------------------------------|---------|
+| `HtmlEncoderInterface` | `encode()`, `encodeKeepingEntities()`, `decode()` |
+| `AttributeRendererInterface` | `render($attributes)` |
+| `TagRendererInterface` | `tag($name, $content, $options)`, `beginTag()`, `endTag()` |
+| `CssOptionsInterface` | `addCssClass()`, `removeCssClass()`, `addCssStyle()`, `removeCssStyle()`, each returning the new options; `cssStyleFromArray()`, `cssStyleToArray()` |
+| `InputNameResolverInterface` | `getAttributeName()`, `getInputIdByName()` |
+| `JsRegexConverterInterface` | `convert($regexp)` |
+| `ResourceTagRendererInterface` | `style()`, `script()`, `cssFile()`, `jsFile()` |
+| `LinkRendererInterface` | `a()`, `mailto()`, `img()` |
+| `FormRendererInterface` | `beginForm()`, `endForm()`, `label()`, `button()`, `submitButton()`, `resetButton()`, `textarea()` |
+| `InputRendererInterface` | `input()`, `buttonInput()`, `submitInput()`, `resetInput()`, `textInput()`, `hiddenInput()`, `passwordInput()`, `fileInput()`, `radio()`, `checkbox()` |
+| `ChoiceListRendererInterface` | `dropDownList()`, `listBox()`, `checkboxList()`, `radioList()`, `renderSelectOptions()` |
+| `ListRendererInterface` | `ul()`, `ol()` |
+
+The tag rendering keeps a fixed attribute order, renders `data`, `aria`, `class` and `style` arrays, skips `null`
+attributes and closes void elements with ` />`. The order and the lists are required `etc/di.xml` arguments with no
+default in the classes, so a project changes them there. An array merge can override an item but not remove it, so a void element is switched off with `false`:
+
+```xml
+<type name="Hryvinskyi\Base\Model\Html\TagRenderer">
+    <arguments>
+        <argument name="voidElements" xsi:type="array">
+            <item name="command" xsi:type="boolean">false</item>
+        </argument>
+    </arguments>
+</type>
+```
+
+The class normalisation switch is read in two places: set `normalizeClassAttribute` to the same value on
+`Model\Html\AttributeRenderer` and `Model\Html\CssOptions`.
+
+### JSON
+
+`Api\Json\JsonEncoderInterface::encode($value, $options)` and `htmlEncode($value)`, the latter safe inside an HTML
+attribute; `Api\Json\JsonDecoderInterface::decode($json, $asArray)`. Malformed input throws
+`Hryvinskyi\Base\Exception\InvalidParamException` with PHP's message and `json_last_error()` code; `null` and an empty
+string decode to `null`.
+
+```php
+$json = $this->jsonEncoder->encode(['name' => 'John'], JSON_PRETTY_PRINT);
+$safe = $this->jsonEncoder->htmlEncode(['alert' => '<script>alert("xss")</script>']);
+$data = $this->jsonDecoder->decode($json);
 ```
 
 ### VarDumper
 
-Advanced variable dumping for debugging with syntax highlighting and circular reference handling.
+To look at a value while debugging, call `dump($var)` or `dd($var)` from anywhere, a template included: they are the
+global functions of `symfony/var-dumper`, which Base requires. `dump()` prints the value and returns it, `dd()` prints
+and stops.
+They are debugging tools with no check of their own: unlike the layout debug tools they print in production mode too, to
+every visitor, so one left in a template ends up in the page cache.
 
-**Features:**
-- Enhanced var_dump with better formatting
-- Handles circular references safely
-- Configurable depth limits
-- Syntax highlighting support
-- Export variables as valid PHP code
-- Support for complex objects and closures
-
-**Methods:**
-- `dump($var, $depth, $highlight)` - Display variable contents
-- `dumpAsString($var, $depth, $highlight)` - Get dump as string
-- `export($var)` - Export as executable PHP code
-- `exportClosure($closure)` - Export closure source code
-
-**Usage Examples:**
+For a dump the code keeps, such as a log entry or a report,
+`Api\Debug\VarDumperInterface::dumpAsString($var, $depth, $highlight)` returns a readable dump that survives circular
+references; with `$highlight` it is HTML with every token escaped, so a dump of visitor data is safe to print.
+`export($var)` returns a PHP expression: objects as `unserialize('…')`, closures as their source.
 
 ```php
-use Hryvinskyi\Base\Helper\VarDumper;
-
-// Basic dumping
-VarDumper::dump($complexObject);
-
-// With depth limit and syntax highlighting
-VarDumper::dump($deeplyNestedArray, 10, true);
-
-// Get dump as string for logging
-$debugInfo = VarDumper::dumpAsString($data, 5);
-$logger->debug($debugInfo);
-
-// Export as PHP code
-$code = VarDumper::export(['name' => 'John', 'items' => [1, 2, 3]]);
-// Result: "['name' => 'John', 'items' => [1, 2, 3,],]"
-
-// Export complex objects (uses serialize/unserialize)
-$code = VarDumper::export($product);
-// Result: "unserialize('...')"
-
-// Export closures (extracts source code)
-$closure = function($x) { return $x * 2; };
-$code = VarDumper::export($closure);
-// Result: "function($x) { return $x * 2; }"
-
-// Handle circular references safely
-$a = ['x' => 1];
-$a['self'] = &$a;
-VarDumper::dump($a); // Safely handles the circular reference
+$logger->debug($this->varDumper->dumpAsString($data, 5));
+$code = $this->varDumper->export(['name' => 'John', 'items' => [1, 2, 3]]);
 ```
 
-## Console Utilities (ConsoleHelper)
+## Upgrading from 2.x
 
-Comprehensive ANSI terminal control for CLI commands with 30+ methods for creating rich console applications.
+3.0 removes every static class in `Helper/`. Inject the interface of the table below instead of calling the static; the
+`Api\…` names are under `Hryvinskyi\Base\`. Nothing replaces `ConsoleHelper`, which had no consumers. A package that
+still calls a static cannot load against 3.0, so `composer.json` declares a `conflict` with the released versions of
+`hryvinskyi/magento2-head-tag-manager`, `-page-speed`, `-page-speed-js-merge` and `-error-reporting` that do.
 
-**Categories:**
-- **Cursor Control**: Move, position, show/hide cursor
-- **Screen Control**: Clear screen, scroll, save/restore positions
-- **Colors & Formatting**: Foreground/background colors, text styles
-- **Input/Output**: Styled output, user input, prompts
-- **Progress Bars**: Visual progress indicators with ETA
-- **Utilities**: Screen size detection, text wrapping, platform detection
+### Classes
 
-### Cursor Control
+| 2.x | 3.0 |
+|-----|-----|
+| `Helper\Config::isEnabledLayoutDebug()` | `Api\LayoutDebugConfigInterface::isEnabledLayoutDebug()`, which also requires a visitor the developer restriction allows |
+| `Helper\Arrayable` | `Api\Data\ArrayableInterface`, with typed signatures: `fields(): array`, `extraFields(): array`, `toArray(array $fields = [], array $expand = [], bool $recursive = true): array` |
+| `new Helper\UnsetArrayValue()` | `Api\Data\UnsetArrayValueInterfaceFactory::create()` |
+| `new Helper\ReplaceArrayValue($value)` | `Api\Data\ReplaceArrayValueInterfaceFactory::create()->withValue($value)` |
+| `Helper\InvalidParamException` (a `\BadMethodCallException`) | `Exception\InvalidParamException`, now an `\InvalidArgumentException`: a `catch (\BadMethodCallException)` no longer sees it. `getName()` is gone |
+| `Helper\InvalidValueException` | `Exception\InvalidValueException`, still an `\UnexpectedValueException`. `getName()` is gone |
+| `Helper\ConsoleHelper` | removed |
 
-```php
-use Hryvinskyi\Base\Helper\ConsoleHelper;
+The markers have no `__set_state()`.
 
-ConsoleHelper::moveCursorUp(2);           // Move cursor up 2 rows
-ConsoleHelper::moveCursorDown(1);         // Move cursor down 1 row
-ConsoleHelper::moveCursorForward(5);      // Move cursor right 5 columns
-ConsoleHelper::moveCursorBackward(3);     // Move cursor left 3 columns
-ConsoleHelper::moveCursorNextLine(2);     // Move to beginning of 2nd line down
-ConsoleHelper::moveCursorPrevLine(1);     // Move to beginning of 1 line up
-ConsoleHelper::moveCursorTo(10, 5);       // Move to column 10, row 5
-ConsoleHelper::saveCursorPosition();      // Save current position
-ConsoleHelper::restoreCursorPosition();   // Restore saved position
-ConsoleHelper::hideCursor();              // Hide cursor
-ConsoleHelper::showCursor();              // Show cursor
-```
+### Json
 
-### Screen Control
+| 2.x | 3.0 |
+|-----|-----|
+| `Json::encode($value, $options)` | `Api\Json\JsonEncoderInterface::encode()` |
+| `Json::htmlEncode($value)` | `Api\Json\JsonEncoderInterface::htmlEncode()` |
+| `Json::decode($json, $asArray)` | `Api\Json\JsonDecoderInterface::decode()`, which takes `?string` |
+| `Json::$prettyPrint` | pass `JSON_PRETTY_PRINT` in `$options` |
+| `Json::$keepObjectType` | the `keepObjectType` constructor argument of `Model\Json\JsonEncoder`, set in `di.xml` |
+| `Json::$jsonErrorMessages` | removed; the exception carries PHP's `json_last_error_msg()` |
 
-```php
-ConsoleHelper::clearScreen();             // Clear entire screen
-ConsoleHelper::clearScreenBeforeCursor(); // Clear from cursor to top
-ConsoleHelper::clearScreenAfterCursor();  // Clear from cursor to bottom
-ConsoleHelper::clearLine();               // Clear current line
-ConsoleHelper::clearLineBeforeCursor();   // Clear line before cursor
-ConsoleHelper::clearLineAfterCursor();    // Clear line after cursor
-ConsoleHelper::scrollUp(3);               // Scroll up 3 lines
-ConsoleHelper::scrollDown(2);             // Scroll down 2 lines
-```
+### VarDumper
 
-### Colors & Formatting
+| 2.x | 3.0 |
+|-----|-----|
+| `VarDumper::dump($var, $depth, $highlight)` | the global `dump($var)` or `dd($var)` of `symfony/var-dumper`, which Base requires: no import, no injection. They take the values to print, not `$depth` and `$highlight`, and print Symfony's format; for those two arguments, print `dumpAsString()` |
+| `VarDumper::dumpAsString($var, $depth, $highlight)` | `Api\Debug\VarDumperInterface::dumpAsString()` |
+| `VarDumper::export($var)` | `Api\Debug\VarDumperInterface::export()` |
 
-**Color Constants:**
-```php
-// Foreground colors
-ConsoleHelper::FG_BLACK, FG_RED, FG_GREEN, FG_YELLOW
-ConsoleHelper::FG_BLUE, FG_PURPLE, FG_CYAN, FG_GREY
+The highlighted form no longer comes from `highlight_string()`: it is `<pre><code style="color: #000000">` with one
+coloured span per token. Its text equals the plain dump and every token is escaped.
 
-// Background colors
-ConsoleHelper::BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW
-ConsoleHelper::BG_BLUE, BG_PURPLE, BG_CYAN, BG_GREY
+### ArrayHelper
 
-// Text styles
-ConsoleHelper::BOLD, ITALIC, UNDERLINE, BLINK
-ConsoleHelper::NEGATIVE, CONCEALED, CROSSED_OUT
-ConsoleHelper::FRAMED, ENCIRCLED, OVERLINED
-```
+| 2.x | 3.0 |
+|-----|-----|
+| `ArrayHelper::getValue($array, $key, $default)` | `Api\Arrays\ArrayPathReaderInterface::getValue()` |
+| `ArrayHelper::keyExists($key, $array, $caseSensitive)` | `Api\Arrays\ArrayPathReaderInterface::keyExists()` |
+| `ArrayHelper::setValue(&$array, $path, $value)` | `$array = Api\Arrays\ArrayPathWriterInterface::setValue($array, $path, $value)`; a `null` path is gone, use the value itself |
+| `$old = ArrayHelper::remove(&$array, $key, $default)` | read first, `$old = array_key_exists($key, $array) ? $array[$key] : $default`, then `$array = ArrayPathWriterInterface::remove($array, $key)`. Not `getValue()`, which falls through to a dot path when the literal key is absent. A `null` array is a `TypeError` |
+| `$old = ArrayHelper::removeValue(&$array, $value)` | read first, `$old = ArrayPathWriterInterface::valuesIdenticalTo($array, $value)`, then `$array = ArrayPathWriterInterface::removeValue($array, $value)`. A `null` array is a `TypeError` |
+| `ArrayHelper::merge($a, $b, ...)` | `Api\Arrays\ArrayMergerInterface::merge()`; the first argument is an array and the others arrays or objects, so a scalar or `null` is a `TypeError` instead of being skipped |
+| `ArrayHelper::index($array, $key, $groups)` | `Api\Arrays\ArrayIndexerInterface::index()`; a lone Closure as `$groups` is refused, wrap it in a list |
+| `ArrayHelper::getColumn($array, $name, $keepKeys)` | `Api\Arrays\ArrayIndexerInterface::getColumn()` |
+| `ArrayHelper::map($array, $from, $to, $group)` | `Api\Arrays\ArrayIndexerInterface::map()` |
+| `ArrayHelper::multisort(&$array, $key, $direction, $sortFlag)` | `$array = Api\Arrays\ArraySorterInterface::multisort($array, $key, $direction, $sortFlag)` |
+| `ArrayHelper::filter($array, $filters)` | `Api\Arrays\ArrayFilterInterface::filter()` |
+| `ArrayHelper::toArray($object, $properties, $recursive)` | `Api\Arrays\ObjectToArrayConverterInterface::toArray()` |
+| `ArrayHelper::htmlEncode($data, $valuesOnly, $charset)` | `Api\Arrays\ArrayHtmlEncoderInterface::htmlEncode($data, $valuesOnly)`, always UTF-8 |
+| `ArrayHelper::htmlDecode($data, $valuesOnly)` | `Api\Arrays\ArrayHtmlEncoderInterface::htmlDecode()` |
+| `ArrayHelper::isAssociative()`, `isIndexed()`, `isIn()`, `isTraversable()`, `isSubset()` | the same methods of `Api\Arrays\ArrayInspectorInterface` |
 
-**Usage:**
-```php
-// Apply formatting
-ConsoleHelper::beginAnsiFormat([ConsoleHelper::FG_RED, ConsoleHelper::BOLD]);
-echo "Error message";
-ConsoleHelper::endAnsiFormat();
+### Html
 
-// Format string
-$formatted = ConsoleHelper::ansiFormat('Warning', [ConsoleHelper::FG_YELLOW, ConsoleHelper::BOLD]);
+| 2.x | 3.0 |
+|-----|-----|
+| `Html::encode($content)` | `Api\Html\HtmlEncoderInterface::encode()` |
+| `Html::encode($content, false)` | `Api\Html\HtmlEncoderInterface::encodeKeepingEntities()` |
+| `Html::decode($content)` | `Api\Html\HtmlEncoderInterface::decode()` |
+| `Html::renderTagAttributes($attributes)` | `Api\Html\AttributeRendererInterface::render()` |
+| `Html::tag()`, `beginTag()`, `endTag()` | the same methods of `Api\Html\TagRendererInterface`; the name is `?string`, `false` is no longer accepted |
+| `Html::addCssClass(&$options, $class)` | `$options = Api\Html\CssOptionsInterface::addCssClass($options, $class)` |
+| `Html::removeCssClass(&$options, $class)` | `$options = Api\Html\CssOptionsInterface::removeCssClass($options, $class)` |
+| `Html::addCssStyle(&$options, $style, $overwrite)` | `$options = Api\Html\CssOptionsInterface::addCssStyle($options, $style, $overwrite)` |
+| `Html::removeCssStyle(&$options, $properties)` | `$options = Api\Html\CssOptionsInterface::removeCssStyle($options, $properties)` |
+| `Html::cssStyleFromArray()`, `cssStyleToArray()` | the same methods of `Api\Html\CssOptionsInterface` |
+| `Html::getAttributeName()`, `getInputIdByName()` | the same methods of `Api\Html\InputNameResolverInterface` |
+| `Html::escapeJsRegularExpression($regexp)` | `Api\Html\JsRegexConverterInterface::convert()` |
+| `Html::style()`, `script()`, `cssFile()`, `jsFile()` | the same methods of `Api\Html\ResourceTagRendererInterface` |
+| `Html::a()`, `mailto()`, `img()` | the same methods of `Api\Html\LinkRendererInterface` |
+| `Html::beginForm()`, `endForm()`, `label()`, `button()`, `submitButton()`, `resetButton()`, `textarea()` | the same methods of `Api\Html\FormRendererInterface` |
+| `Html::input()`, `buttonInput()`, `submitInput()`, `resetInput()`, `textInput()`, `hiddenInput()`, `passwordInput()`, `fileInput()`, `radio()`, `checkbox()` | the same methods of `Api\Html\InputRendererInterface` |
+| `Html::dropDownList()`, `listBox()`, `checkboxList()`, `radioList()` | the same methods of `Api\Html\ChoiceListRendererInterface` |
+| `Html::renderSelectOptions($selection, $items, &$tagOptions)` | `Api\Html\ChoiceListRendererInterface::renderSelectOptions()`, which leaves its options alone: a caller rendering its own `<select>` strips `ChoiceListRendererInterface::SELECT_OPTION_KEYS` from them |
+| `Html::ul()`, `ol()` | the same methods of `Api\Html\ListRendererInterface`; the items are `iterable`, so `null` is a `TypeError` |
+| `Html::$attributeOrder`, `Html::$dataAttributes` | the `attributeOrder` and `dataAttributes` arguments of `Model\Html\AttributeRenderer` in `di.xml` |
+| `Html::$normalizeClassAttribute` | the `normalizeClassAttribute` argument of both `Model\Html\AttributeRenderer` and `Model\Html\CssOptions`, with the same value |
+| `Html::$voidElements` | the `voidElements` argument of `Model\Html\TagRenderer` in `di.xml` |
+| `Html::$attributeRegex` | the `attributeRegex` argument of `Model\Html\InputNameResolver` in `di.xml` |
 
-// xterm 256 colors
-$fgColor = ConsoleHelper::xtermFgColor(208); // Orange
-$bgColor = ConsoleHelper::xtermBgColor(235); // Dark gray
-echo ConsoleHelper::ansiFormat('Text', [$fgColor, $bgColor]);
-
-// Color codes in strings (irssi-style)
-$text = ConsoleHelper::renderColoredString('%R[ERROR]%n %yWarning message', true);
-// %R = red bold, %n = reset, %y = yellow
-
-// Convert ANSI to HTML
-$html = ConsoleHelper::ansiToHtml($ansiString);
-
-// Strip ANSI codes
-$plain = ConsoleHelper::stripAnsiFormat($ansiString);
-$length = ConsoleHelper::ansiStrlen($ansiString); // Length without codes
-```
-
-### Input/Output
-
-```php
-// Output
-ConsoleHelper::stdout("Message");          // Print to STDOUT
-ConsoleHelper::stderr("Error");            // Print to STDERR
-ConsoleHelper::output("Line");             // Print line to STDOUT
-ConsoleHelper::error("Error");             // Print line to STDERR
-
-// Input
-$input = ConsoleHelper::stdin();           // Read from STDIN
-$input = ConsoleHelper::input("Name: ");   // Prompt and read
-
-// Prompt with validation
-$email = ConsoleHelper::prompt("Email: ", [
-    'required' => true,
-    'pattern' => '/^[^@]+@[^@]+$/',
-    'error' => 'Invalid email format'
-]);
-
-$age = ConsoleHelper::prompt("Age: ", [
-    'default' => 18,
-    'validator' => function($input, &$error) {
-        if ($input < 18) {
-            $error = "Must be 18 or older";
-            return false;
-        }
-        return true;
-    }
-]);
-
-// Confirmation
-if (ConsoleHelper::confirm("Delete all files?", false)) {
-    // User confirmed
-}
-
-// Selection menu
-$choice = ConsoleHelper::select("Choose action:", [
-    'c' => 'Create',
-    'r' => 'Read',
-    'u' => 'Update',
-    'd' => 'Delete'
-]);
-```
-
-### Progress Bars
-
-```php
-// Simple progress bar
-ConsoleHelper::startProgress(0, 1000);
-for ($i = 1; $i <= 1000; $i++) {
-    usleep(1000);
-    ConsoleHelper::updateProgress($i, 1000);
-}
-ConsoleHelper::endProgress();
-
-// With prefix
-ConsoleHelper::startProgress(0, 100, 'Processing: ');
-// ... update progress ...
-ConsoleHelper::endProgress("Done!\n");
-
-// Git-style (status only, no bar)
-ConsoleHelper::startProgress(0, 1000, 'Counting objects: ', false);
-// ... update progress ...
-ConsoleHelper::endProgress("done.\n");
-
-// Custom width
-ConsoleHelper::startProgress(0, 100, '', 0.5); // 50% of screen width
-ConsoleHelper::startProgress(0, 100, '', 80);  // 80 characters wide
-```
-
-### Utilities
-
-```php
-// Platform detection
-if (ConsoleHelper::isRunningOnWindows()) {
-    // Windows-specific code
-}
-
-// ANSI support detection
-if (ConsoleHelper::streamSupportsAnsiColors(STDOUT)) {
-    // Use colored output
-}
-
-// Screen size
-list($width, $height) = ConsoleHelper::getScreenSize();
-list($width, $height) = ConsoleHelper::getScreenSize(true); // Force refresh
-
-// Text wrapping with indentation
-$wrapped = ConsoleHelper::wrapText($longText, 4);
-/*
-Lorem ipsum
-    dolor sit
-    amet.
-*/
-
-// Escape color codes
-$escaped = ConsoleHelper::escape("String with %y color codes");
-```
-
-### Complete CLI Example
-
-```php
-use Hryvinskyi\Base\Helper\ConsoleHelper;
-
-class MyCommand extends \Symfony\Component\Console\Command\Command
-{
-    protected function execute($input, $output)
-    {
-        // Header
-        ConsoleHelper::output(ConsoleHelper::ansiFormat('=== Deployment Script ===', [
-            ConsoleHelper::FG_GREEN,
-            ConsoleHelper::BOLD
-        ]));
-
-        // Confirmation
-        if (!ConsoleHelper::confirm("Deploy to production?", false)) {
-            ConsoleHelper::output(ConsoleHelper::ansiFormat('Cancelled', [ConsoleHelper::FG_YELLOW]));
-            return 0;
-        }
-
-        // Progress
-        $tasks = ['compile', 'test', 'deploy', 'cleanup'];
-        ConsoleHelper::startProgress(0, count($tasks), 'Progress: ');
-
-        foreach ($tasks as $i => $task) {
-            sleep(1);
-            ConsoleHelper::updateProgress($i + 1, count($tasks));
-        }
-
-        ConsoleHelper::endProgress(ConsoleHelper::ansiFormat('✓ Completed!', [
-            ConsoleHelper::FG_GREEN
-        ]) . "\n");
-
-        return 0;
-    }
-}
-```
+The services declare `strict_types`, so an `item` callback of a list receives the raw key: an `int` for a numeric key.
+A callback that types the key `string` has to be widened.
 
 ## Requirements
 
-- PHP >= 8.0
+- PHP >= 8.1 with the tokenizer extension
 - Magento 2.x (2.4+ recommended)
 
 ## License
 
 This module contains code from two sources with dual licensing:
 
-### Yii2 Framework Helpers (BSD-3-Clause License)
+### Yii2 Framework Code (BSD-3-Clause License)
 
-The helper classes (`ArrayHelper`, `Html`, `Json`, `VarDumper`, `ConsoleHelper`) are derived from the [Yii2 Framework](https://www.yiiframework.com/) and are licensed under the BSD-3-Clause License.
+The array, HTML, JSON and dump services (`Model/Arrays`, `Model/Html`, `Model/Json`, `Model/Debug` and their interfaces) are derived from the [Yii2 Framework](https://www.yiiframework.com/) and are licensed under the BSD-3-Clause License.
 
 - **Copyright**: © 2008 Yii Software LLC
 - **License**: BSD-3-Clause

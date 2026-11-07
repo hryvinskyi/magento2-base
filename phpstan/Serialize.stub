@@ -1,0 +1,17 @@
+<?php
+
+namespace Magento\Framework\Serialize\Serializer;
+
+/**
+ * The implementation serializes any value but a resource, objects included, with PHP's native format; the
+ * interface's docblock narrows the parameter to scalars, arrays and null.
+ */
+class Serialize
+{
+    /**
+     * @param mixed $data
+     * @return string
+     * @throws \InvalidArgumentException when the value is a resource
+     */
+    public function serialize($data);
+}
