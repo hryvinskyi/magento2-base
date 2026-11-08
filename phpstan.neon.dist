@@ -3,6 +3,7 @@ parameters:
     phpVersion: 80100
     paths:
         - registration.php
+        - functions.php
         - Api
         - Block
         - Exception

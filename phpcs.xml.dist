@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright (c) 2026. Volodymyr Hryvinskyi. All rights reserved.
+ * Author: Volodymyr Hryvinskyi <volodymyr@hryvinskyi.com>
+ * GitHub: https://github.com/hryvinskyi
+ */
+-->
+<ruleset name="Hryvinskyi_Base">
+    <description>
+        Magento2, except for the global debug functions: printing and stopping the script is what hdump() and hdd()
+        are for, and the module's registration loads them because it is the one file every way of installing runs.
+    </description>
+    <arg name="extensions" value="php,phtml,xml,css"/>
+    <file>.</file>
+
+    <rule ref="Magento2"/>
+
+    <rule ref="Magento2.Security.LanguageConstruct.DirectOutput">
+        <exclude-pattern>*/functions\.php$</exclude-pattern>
+    </rule>
+    <rule ref="Magento2.Security.LanguageConstruct.ExitUsage">
+        <exclude-pattern>*/functions\.php$</exclude-pattern>
+    </rule>
+    <rule ref="Magento2.Functions.DiscouragedFunction">
+        <exclude-pattern>*/functions\.php$</exclude-pattern>
+    </rule>
+    <rule ref="Magento2.Security.IncludeFile.FoundIncludeFile">
+        <exclude-pattern>*/registration\.php$</exclude-pattern>
+    </rule>
+</ruleset>

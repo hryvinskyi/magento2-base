@@ -18,8 +18,11 @@
         "hryvinskyi/magento2-page-speed-js-merge": "<1.0.8",
         "hryvinskyi/magento2-error-reporting": "<1.1"
     },
+    "require-dev": {
+        "symfony/process": "*"
+    },
     "type": "magento2-module",
-    "version": "3.0.0",
+    "version": "3.1.0",
     "license": "MIT",
     "autoload": {
         "files": [ "registration.php" ],

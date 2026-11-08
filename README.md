@@ -422,9 +422,10 @@ $data = $this->jsonDecoder->decode($json);
 
 ### VarDumper
 
-To look at a value while debugging, call `dump($var)` or `dd($var)` from anywhere, a template included: they are the
-global functions of `symfony/var-dumper`, which Base requires. `dump()` prints the value and returns it, `dd()` prints
-and stops.
+To look at a value while debugging, call `hdump($var, $depth, $highlight)` or `hdd(...)` from anywhere, a template
+included, with no import: they print Base's dump (below), `hdump()` returns the value and `hdd()` stops the script.
+Highlighting defaults to on everywhere but the command line. Symfony's `dump()` and `dd()` work too: Base requires
+`symfony/var-dumper`.
 They are debugging tools with no check of their own: unlike the layout debug tools they print in production mode too, to
 every visitor, so one left in a template ends up in the page cache.
 
@@ -474,7 +475,7 @@ The markers have no `__set_state()`.
 
 | 2.x | 3.0 |
 |-----|-----|
-| `VarDumper::dump($var, $depth, $highlight)` | the global `dump($var)` or `dd($var)` of `symfony/var-dumper`, which Base requires: no import, no injection. They take the values to print, not `$depth` and `$highlight`, and print Symfony's format; for those two arguments, print `dumpAsString()` |
+| `VarDumper::dump($var, $depth, $highlight)` | `hdump($var, $depth, $highlight)`: global, no import; it prints and returns the value. `hdd()` prints and stops. Symfony's `dump()`/`dd()` also work |
 | `VarDumper::dumpAsString($var, $depth, $highlight)` | `Api\Debug\VarDumperInterface::dumpAsString()` |
 | `VarDumper::export($var)` | `Api\Debug\VarDumperInterface::export()` |
 

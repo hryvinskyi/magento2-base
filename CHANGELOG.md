@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-11-08
+
+### Added
+- `hdump($var, $depth, $highlight)` and `hdd(...)`: global debug functions that print Base's dump from anywhere, with no
+  import or injection, as the 2.x static `VarDumper::dump()` could. `hdump()` returns the value; `hdd()` sends a 500 to
+  a browser, so no page cache stores the page, and stops. Highlighting defaults to on everywhere but the command line.
+  Before Magento has started they print the value with `print_r()`. The module's registration loads them, so they
+  exist whether Base comes from Composer or from `app/code`. They print in production mode too: they are not for
+  committed code.
+- `phpcs.xml.dist`: the Magento2 standard, with printing and stopping allowed in `functions.php` and the require in
+  `registration.php`.
+
 ## [3.0.0] - 2026-11-07
 
 The static helpers become injected services. See "Upgrading from 2.x" in the README for the table of every old call.
