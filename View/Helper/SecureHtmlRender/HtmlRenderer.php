@@ -33,18 +33,31 @@ class HtmlRenderer extends \Magento\Framework\View\Helper\SecureHtmlRender\HtmlR
     /**
      * Render the tag.
      *
+     * An attribute whose value is `null` is rendered without a value (`<script data-x>`): Magento's renderer keeps
+     * such an attribute too, as `data-x=""`, and templates mark tags with it.
+     *
      * @param TagData $tagData
      * @return string
      */
     public function renderTag(TagData $tagData): string
     {
-        $content = '';
-        if ($tagData->getContent() !== null) {
-            $content = $tagData->isTextContent()
-                ? $this->htmlEscaper->escapeHtml($tagData->getContent())
-                : $tagData->getContent();
+        $content = $tagData->getContent() ?? '';
+        if ($tagData->isTextContent()) {
+            $escaped = $this->htmlEscaper->escapeHtml($content);
+            $content = is_string($escaped) ? $escaped : '';
         }
 
-        return Html::tag($tagData->getTag(), $content, $tagData->getAttributes());
+        return Html::tag($tagData->getTag(), $content, $this->withValuelessAttributes($tagData->getAttributes()));
+    }
+
+    /**
+     * Mark each attribute given without a value as one the Html builder renders bare.
+     *
+     * @param array<string|null> $attributes the tag's attributes, `null` for an attribute without a value
+     * @return array<string|true>
+     */
+    private function withValuelessAttributes(array $attributes): array
+    {
+        return array_map(static fn (?string $value): string|bool => $value ?? true, $attributes);
     }
 }

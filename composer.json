@@ -7,7 +7,7 @@
         "magento/module-backend": "^102.0"
     },
     "type": "magento2-module",
-    "version": "2.3.1",
+    "version": "2.3.2",
     "license": "MIT",
     "autoload": {
         "files": [ "registration.php" ],

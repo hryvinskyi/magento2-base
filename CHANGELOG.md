@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2] - 2026-11-09
+
+### Fixed
+- `View\Helper\SecureHtmlRender\HtmlRenderer` renders an attribute given as `null` without a value again
+  (`$secureRenderer->renderTag('script', ['data-x' => null], ...)` gives `<script data-x>`), as 2.1 did. Since 2.2 the
+  attribute was dropped, while Magento's own renderer keeps it as `data-x=""`; a template that marks its tag this way,
+  such as a script that another module must leave alone, lost its marker.
+
 ## [2.3.1] - 2026-11-07
 
 ### Fixed

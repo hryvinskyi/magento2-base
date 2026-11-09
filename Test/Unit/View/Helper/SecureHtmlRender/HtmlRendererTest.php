@@ -57,6 +57,30 @@ class HtmlRendererTest extends TestCase
         );
     }
 
+    public function testANullAttributeIsRenderedWithoutAValue(): void
+    {
+        $tagData = $this->createMock(TagData::class);
+        $tagData->method('getTag')->willReturn('script');
+        $tagData->method('getAttributes')->willReturn(
+            ['data-ignore-extreme-lazy-load' => null, 'src' => '/a.js', 'data-pagespeed-ignore-merge' => null]
+        );
+        $tagData->method('getContent')->willReturn(null);
+        $tagData->method('isTextContent')->willReturn(false);
+
+        self::assertSame(
+            '<script src="/a.js" data-ignore-extreme-lazy-load data-pagespeed-ignore-merge></script>',
+            $this->renderer->renderTag($tagData)
+        );
+    }
+
+    public function testATagWithoutContentRendersEmptyWhenContentIsText(): void
+    {
+        self::assertSame(
+            '<p class="note"></p>',
+            $this->renderer->renderTag(new TagData('p', ['class' => 'note'], null, true))
+        );
+    }
+
     public function testAVoidTagSelfCloses(): void
     {
         self::assertSame(
